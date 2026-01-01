@@ -1,4 +1,5 @@
 import QueueForm from '@/components/QueueForm';
+import { Footer } from '@/components/blocks/footer-section';
 import { Scissors, Clock, Shield } from 'lucide-react';
 
 export default function Home() {
@@ -68,11 +69,7 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-border/50 py-8">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 Ventus. Elimine o Caos do Sábado de Manhã.</p>
-        </div>
-      </footer>
+      <Footer />
     </main>
   );
 }
