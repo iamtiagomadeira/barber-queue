@@ -25,7 +25,7 @@ export default function Home() {
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
               Entre na fila virtual da sua barbearia favorita.
               Receba notificação quando for a sua vez.
-              <strong className="text-foreground"> Sem stress, sem espera.</strong>
+              <strong className="text-foreground"> Sem stress, sem drama.</strong>
             </p>
           </div>
 
