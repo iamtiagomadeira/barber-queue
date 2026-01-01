@@ -380,7 +380,7 @@ export default function QueueForm() {
                                 const showGlow = isSelected || isHighlighted;
 
                                 return (
-                                    <div key={service.id} className="relative">
+                                    <div key={service.id} className="relative rounded-lg">
                                         <GlowingEffect
                                             spread={40}
                                             glow={showGlow}
