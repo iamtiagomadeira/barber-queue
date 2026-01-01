@@ -55,6 +55,11 @@ export default {
                     light: "#f4d03f",
                     dark: "#b8941f",
                 },
+                barber: {
+                    red: "#dc2626",
+                    blue: "#3b82f6",
+                    white: "#ffffff",
+                },
             },
             borderRadius: {
                 lg: "var(--radius)",

@@ -4,33 +4,64 @@
 
 @layer base {
   :root {
+    /* === BARBER POLE MODERNIZADO === */
+    /* Preto Mate */
     --background: 0 0% 4%;
-    /* Matte Black #0a0a0a */
+    /* #0a0a0a */
     --foreground: 0 0% 98%;
-    --card: 0 0% 8%;
+    /* Branco */
+
+    /* Cards - Preto mais suave */
+    --card: 0 0% 7%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 8%;
+    --popover: 0 0% 7%;
     --popover-foreground: 0 0% 98%;
+
+    /* Cores Primárias - Dourado */
     --primary: 43 74% 52%;
     /* Gold #d4af37 */
     --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 14%;
+
+    /* Cores Secundárias - Cinza escuro */
+    --secondary: 0 0% 12%;
     --secondary-foreground: 0 0% 98%;
+
+    /* Muted - Para textos secundários */
     --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 64%;
+    --muted-foreground: 0 0% 70%;
+
+    /* Accent - Dourado também */
     --accent: 43 74% 52%;
     --accent-foreground: 0 0% 4%;
-    --destructive: 0 84% 60%;
+
+    /* Destructive - Vermelho Barber Pole */
+    --destructive: 0 72% 51%;
+    /* #dc2626 - vermelho clássico */
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
+
+    /* Barber Pole Accent - Azul */
+    --barber-blue: 217 91% 60%;
+    /* #3b82f6 */
+    --barber-red: 0 72% 51%;
+    /* #dc2626 */
+
+    /* Borders e Inputs */
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
     --ring: 43 74% 52%;
     --radius: 0.5rem;
+
+    /* Charts */
     --chart-1: 43 74% 52%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    /* Gold */
+    --chart-2: 0 72% 51%;
+    /* Red */
+    --chart-3: 217 91% 60%;
+    /* Blue */
+    --chart-4: 0 0% 80%;
+    /* White/Gray */
+    --chart-5: 43 74% 66%;
+    /* Light Gold */
   }
 }
 
@@ -88,4 +119,40 @@
       rgba(212, 175, 55, 0.1) 50%,
       transparent 100%);
   background-size: 1000px 100%;
+}
+
+/* Barber Pole animation */
+@keyframes barber-pole {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 60px 60px;
+  }
+}
+
+.barber-pole-gradient {
+  background: repeating-linear-gradient(45deg,
+      #dc2626 0px,
+      #dc2626 10px,
+      #ffffff 10px,
+      #ffffff 20px,
+      #3b82f6 20px,
+      #3b82f6 30px,
+      #ffffff 30px,
+      #ffffff 40px);
+  background-size: 60px 60px;
+  animation: barber-pole 2s linear infinite;
+}
+
+/* Subtle gold glow effect */
+.gold-glow {
+  box-shadow: 0 0 20px rgba(212, 175, 55, 0.15),
+    0 0 40px rgba(212, 175, 55, 0.1);
+}
+
+/* White text with subtle shadow for contrast */
+.text-white-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
