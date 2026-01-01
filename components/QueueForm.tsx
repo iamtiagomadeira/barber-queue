@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Scissors, Clock, Users, CreditCard, Loader2 } from 'lucide-react';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 // Portugal only - no country selection needed
 import { createClient } from '@/lib/supabase/client';
 
@@ -363,24 +364,33 @@ export default function QueueForm() {
                         <Label>Serviço</Label>
                         <div className="grid grid-cols-2 gap-2">
                             {services.map((service) => (
-                                <button
-                                    key={service.id}
-                                    type="button"
-                                    onClick={() => setSelectedService(service.id)}
-                                    className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all hover:border-gold/50 ${selectedService === service.id
-                                        ? 'border-gold bg-gold/10'
-                                        : 'border-border'
-                                        }`}
-                                >
-                                    <span className="font-medium">{service.nome}</span>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Clock className="h-3 w-3" />
-                                        {service.duracao_media}min
-                                    </div>
-                                    <Badge variant="outline" className="mt-1 border-gold/30 text-gold">
-                                        {service.preco}€
-                                    </Badge>
-                                </button>
+                                <div key={service.id} className="relative">
+                                    <GlowingEffect
+                                        spread={40}
+                                        glow={selectedService === service.id}
+                                        disabled={selectedService !== service.id}
+                                        proximity={64}
+                                        inactiveZone={0.01}
+                                        borderWidth={2}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedService(service.id)}
+                                        className={`relative flex w-full flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all hover:border-gold/50 ${selectedService === service.id
+                                            ? 'border-gold bg-gold/10'
+                                            : 'border-border'
+                                            }`}
+                                    >
+                                        <span className="font-medium">{service.nome}</span>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Clock className="h-3 w-3" />
+                                            {service.duracao_media}min
+                                        </div>
+                                        <Badge variant="outline" className="mt-1 border-gold/30 text-gold">
+                                            {service.preco}€
+                                        </Badge>
+                                    </button>
+                                </div>
                             ))}
                         </div>
                     </div>
