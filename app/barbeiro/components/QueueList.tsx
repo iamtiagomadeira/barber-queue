@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, User, Phone, Scissors, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface QueueEntry {
     id: string;
@@ -65,6 +66,7 @@ export default function QueueList() {
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const supabase = createClient();
+    const { toast } = useToast();
 
     // Fetch queue from API (supports both Supabase and in-memory fallback)
     const fetchQueue = async () => {
@@ -166,8 +168,21 @@ export default function QueueList() {
             });
             const smsResult = await smsResponse.json();
             console.log('SMS result:', smsResult);
+
+            if (!smsResult.success) {
+                toast({
+                    variant: "destructive",
+                    title: "⚠️ SMS não enviado",
+                    description: `Por favor ligue ao cliente: ${nextCustomer.cliente_telefone}`,
+                });
+            }
         } catch (smsError) {
             console.log('SMS notification failed:', smsError);
+            toast({
+                variant: "destructive",
+                title: "⚠️ SMS não enviado",
+                description: `Por favor ligue ao cliente: ${nextCustomer.cliente_telefone}`,
+            });
         }
 
         setActionLoading(null);
