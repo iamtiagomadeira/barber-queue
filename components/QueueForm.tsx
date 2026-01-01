@@ -54,7 +54,18 @@ export default function QueueForm() {
     const [waitTime, setWaitTime] = useState<number>(0);
     const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
     const [error, setError] = useState<string | null>(null);
+    const [highlightedCardIndex, setHighlightedCardIndex] = useState(0);
 
+    // Auto-rotate glow effect through cards when no service is selected
+    useEffect(() => {
+        if (selectedService || services.length === 0) return;
+
+        const interval = setInterval(() => {
+            setHighlightedCardIndex((prev) => (prev + 1) % services.length);
+        }, 2000);
+
+        return () => clearInterval(interval);
+    }, [selectedService, services.length]);
 
     // Fetch services from Supabase on mount
     useEffect(() => {
@@ -363,35 +374,41 @@ export default function QueueForm() {
                     <div className="space-y-2">
                         <Label>Serviço</Label>
                         <div className="grid grid-cols-2 gap-2">
-                            {services.map((service) => (
-                                <div key={service.id} className="relative">
-                                    <GlowingEffect
-                                        spread={40}
-                                        glow={selectedService === service.id}
-                                        disabled={selectedService !== service.id}
-                                        proximity={64}
-                                        inactiveZone={0.01}
-                                        borderWidth={2}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedService(service.id)}
-                                        className={`relative flex w-full flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all hover:border-gold/50 ${selectedService === service.id
-                                            ? 'border-gold bg-gold/10'
-                                            : 'border-border'
-                                            }`}
-                                    >
-                                        <span className="font-medium">{service.nome}</span>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <Clock className="h-3 w-3" />
-                                            {service.duracao_media}min
-                                        </div>
-                                        <Badge variant="outline" className="mt-1 border-gold/30 text-gold">
-                                            {service.preco}€
-                                        </Badge>
-                                    </button>
-                                </div>
-                            ))}
+                            {services.map((service, index) => {
+                                const isSelected = selectedService === service.id;
+                                const isHighlighted = !selectedService && index === highlightedCardIndex;
+                                const showGlow = isSelected || isHighlighted;
+
+                                return (
+                                    <div key={service.id} className="relative">
+                                        <GlowingEffect
+                                            spread={40}
+                                            glow={showGlow}
+                                            disabled={!showGlow}
+                                            proximity={64}
+                                            inactiveZone={0.01}
+                                            borderWidth={2}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedService(service.id)}
+                                            className={`relative flex w-full flex-col items-start gap-1 rounded-lg border p-3 text-left transition-all hover:border-gold/50 ${selectedService === service.id
+                                                ? 'border-gold bg-gold/10'
+                                                : 'border-border'
+                                                }`}
+                                        >
+                                            <span className="font-medium">{service.nome}</span>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Clock className="h-3 w-3" />
+                                                {service.duracao_media}min
+                                            </div>
+                                            <Badge variant="outline" className="mt-1 border-gold/30 text-gold">
+                                                {service.preco}€
+                                            </Badge>
+                                        </button>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
 
