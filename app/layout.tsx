@@ -13,13 +13,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Barber Queue - Elimine a Espera",
+  title: "Ventus - Elimine a Espera",
   description: "Fila virtual para barbearias. Entre na fila remotamente e elimine a espera física.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Barber Queue",
+    title: "Ventus",
   },
 };
 

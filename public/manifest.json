@@ -1,6 +1,6 @@
 {
-  "name": "Barber Queue",
-  "short_name": "Barber Queue",
+  "name": "Ventus",
+  "short_name": "Ventus",
   "description": "Fila virtual para barbearias",
   "start_url": "/",
   "display": "standalone",

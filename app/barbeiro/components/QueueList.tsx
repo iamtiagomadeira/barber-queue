@@ -163,7 +163,7 @@ export default function QueueList() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     to: nextCustomer.cliente_telefone,
-                    message: `Olá ${nextCustomer.cliente_nome}! 🪒 É a sua vez na Barber Queue. Por favor dirija-se à barbearia. Obrigado!`,
+                    message: `Olá ${nextCustomer.cliente_nome}! É a sua vez na Ventus. Por favor dirija-se ao estabelecimento. Obrigado!`,
                 }),
             });
             const smsResult = await smsResponse.json();

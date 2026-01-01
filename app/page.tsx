@@ -1,5 +1,4 @@
 import QueueForm from '@/components/QueueForm';
-import HeroTitle from '@/components/HeroTitle';
 import { Scissors, Clock, Shield } from 'lucide-react';
 
 export default function Home() {
@@ -12,10 +11,16 @@ export default function Home() {
           <div className="text-center">
             <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-gold/20 bg-gold/5 px-6 py-2">
               <Scissors className="h-5 w-5 text-gold" />
-              <span className="text-sm font-medium text-gold">Barber Queue</span>
+              <span className="text-sm font-medium text-gold">Ventus</span>
             </div>
 
-            <HeroTitle />
+            <h1 className="mb-4 text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl">
+              Elimine a Espera
+              <br />
+              <span className="bg-gradient-to-r from-gold via-gold-light to-gold bg-clip-text text-transparent">
+                Física
+              </span>
+            </h1>
 
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
               Entre na fila virtual da sua barbearia favorita.
@@ -65,7 +70,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-border/50 py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 Barber Queue. Elimine o Caos do Sábado de Manhã.</p>
+          <p>© 2025 Ventus. Elimine o Caos do Sábado de Manhã.</p>
         </div>
       </footer>
     </main>

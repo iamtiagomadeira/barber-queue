@@ -38,7 +38,7 @@ export async function sendSMS(to: string, message: string): Promise<{ success: b
 
 // Template messages
 export const SMS_TEMPLATES = {
-    customerCalled: (name: string, barbershopName = 'Barber Queue') =>
+    customerCalled: (name: string, barbershopName = 'Ventus') =>
         `Olá ${name}! 🪒 É a sua vez na ${barbershopName}. Por favor dirija-se à barbearia. Obrigado!`,
 
     almostYourTurn: (name: string, position: number) =>
