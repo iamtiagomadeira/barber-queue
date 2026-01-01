@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Scissors, Clock, Users, ChevronDown, CreditCard, Loader2 } from 'lucide-react';
-import { countries, defaultCountry, type Country } from '@/lib/countries';
+import { Scissors, Clock, Users, CreditCard, Loader2 } from 'lucide-react';
+// Portugal only - no country selection needed
 import { createClient } from '@/lib/supabase/client';
 
 // Dynamically import Stripe to avoid SSR issues
@@ -41,9 +41,9 @@ type FormStep = 'form' | 'payment' | 'success';
 export default function QueueForm() {
     const [nome, setNome] = useState('');
     const [telefone, setTelefone] = useState('');
-    const [selectedCountry, setSelectedCountry] = useState<Country>(defaultCountry);
-    const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
-    const [countrySearch, setCountrySearch] = useState('');
+    // Portugal only
+    const PORTUGAL_PREFIX = '+351';
+    const PORTUGAL_FLAG = '🇵🇹';
     const [selectedService, setSelectedService] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState<FormStep>('form');
@@ -53,7 +53,7 @@ export default function QueueForm() {
     const [waitTime, setWaitTime] = useState<number>(0);
     const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
     const [error, setError] = useState<string | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+
 
     // Fetch services from Supabase on mount
     useEffect(() => {
@@ -75,23 +75,11 @@ export default function QueueForm() {
         fetchServices();
     }, []);
 
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsCountryDropdownOpen(false);
-                setCountrySearch('');
-            }
-        }
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    const filteredCountries = countries.filter(
-        (country) =>
-            country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
-            country.dialCode.includes(countrySearch) ||
-            country.code.toLowerCase().includes(countrySearch.toLowerCase())
-    );
+    // Validate Portuguese phone number (9 digits, starts with 9)
+    const isValidPortuguesePhone = (phone: string): boolean => {
+        const digits = phone.replace(/\D/g, '');
+        return digits.length === 9 && digits.startsWith('9');
+    };
 
     const getSelectedService = () => services.find(s => s.id === selectedService);
 
@@ -114,7 +102,7 @@ export default function QueueForm() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     customer_name: nome,
-                    customer_phone: `${selectedCountry.dialCode}${telefone.replace(/\s/g, '')}`,
+                    customer_phone: `${PORTUGAL_PREFIX}${telefone.replace(/\s/g, '')}`,
                     service_name: service.nome,
                 }),
             });
@@ -140,7 +128,7 @@ export default function QueueForm() {
         setPaymentIntentId(intentId);
 
         const service = getSelectedService();
-        const fullPhone = `${selectedCountry.dialCode}${telefone.replace(/\s/g, '')}`;
+        const fullPhone = `${PORTUGAL_PREFIX}${telefone.replace(/\s/g, '')}`;
 
         console.log('[QueueForm] Payment successful, joining queue...', { intentId, service, fullPhone, nome });
 
@@ -197,11 +185,10 @@ export default function QueueForm() {
     };
 
     const formatPhone = (value: string) => {
-        const digits = value.replace(/\D/g, '');
+        const digits = value.replace(/\D/g, '').slice(0, 9); // Max 9 digits for PT
         if (digits.length <= 3) return digits;
         if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-        if (digits.length <= 9) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
-        return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+        return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
     };
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -209,11 +196,7 @@ export default function QueueForm() {
         setTelefone(formatted);
     };
 
-    const selectCountry = (country: Country) => {
-        setSelectedCountry(country);
-        setIsCountryDropdownOpen(false);
-        setCountrySearch('');
-    };
+
 
     const formatWaitTime = (minutes: number): string => {
         if (minutes < 60) {
@@ -352,45 +335,10 @@ export default function QueueForm() {
                         <Label htmlFor="telefone">Telemóvel</Label>
                         <div className="flex gap-2">
                             {/* Country Code Dropdown */}
-                            <div className="relative" ref={dropdownRef}>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
-                                    className="flex h-9 items-center gap-1 rounded-md border border-gold/20 bg-background px-3 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold"
-                                >
-                                    <span className="text-lg">{selectedCountry.flag}</span>
-                                    <span className="text-muted-foreground">{selectedCountry.dialCode}</span>
-                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                </button>
-
-                                {isCountryDropdownOpen && (
-                                    <div className="absolute left-0 top-10 z-50 w-64 rounded-md border border-border bg-card shadow-lg">
-                                        <div className="p-2">
-                                            <Input
-                                                placeholder="Pesquisar país..."
-                                                value={countrySearch}
-                                                onChange={(e) => setCountrySearch(e.target.value)}
-                                                className="h-8 text-sm"
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div className="max-h-60 overflow-y-auto">
-                                            {filteredCountries.map((country) => (
-                                                <button
-                                                    key={country.code}
-                                                    type="button"
-                                                    onClick={() => selectCountry(country)}
-                                                    className={`flex w-full items-center gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${selectedCountry.code === country.code ? 'bg-gold/10' : ''
-                                                        }`}
-                                                >
-                                                    <span className="text-lg">{country.flag}</span>
-                                                    <span className="flex-1 truncate">{country.name}</span>
-                                                    <span className="text-muted-foreground">{country.dialCode}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                            {/* Portugal Flag and Prefix (fixed) */}
+                            <div className="flex h-9 items-center gap-1 rounded-md border border-gold/20 bg-background px-3 text-sm">
+                                <span className="text-lg">{PORTUGAL_FLAG}</span>
+                                <span className="text-muted-foreground">{PORTUGAL_PREFIX}</span>
                             </div>
 
                             {/* Phone Input */}
@@ -401,7 +349,8 @@ export default function QueueForm() {
                                 value={telefone}
                                 onChange={handlePhoneChange}
                                 required
-                                maxLength={15}
+                                maxLength={11}
+                                pattern="[0-9 ]*"
                                 className="flex-1 border-gold/20 focus-visible:ring-gold"
                             />
                         </div>
