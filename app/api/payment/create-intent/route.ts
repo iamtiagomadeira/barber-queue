@@ -7,10 +7,14 @@ export async function POST(request: NextRequest) {
         const { customer_name, customer_phone, service_name } = body;
 
         // Create a PaymentIntent with automatic capture disabled (authorization only)
+        // automatic_payment_methods enables MB WAY, Apple Pay, Google Pay based on location/device
         const paymentIntent = await stripe.paymentIntents.create({
             amount: DEPOSIT_AMOUNT,
             currency: DEPOSIT_CURRENCY,
             capture_method: 'manual', // This creates a hold, not an immediate charge
+            automatic_payment_methods: {
+                enabled: true,
+            },
             metadata: {
                 customer_name,
                 customer_phone,
