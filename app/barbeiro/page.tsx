@@ -1,163 +1,89 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import AuthGuard from '@/components/AuthGuard';
-import QueueList from './components/QueueList';
-import ManualEntryForm from './components/ManualEntryForm';
-import { QueueToggle } from './components/QueueToggle';
-import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { Scissors, LogOut, Settings2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { createClient } from '@/lib/supabase/client';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Loader2, Scissors } from 'lucide-react';
 
-import BookingsCalendar from './components/BookingsCalendar';
-
-// ID da barbearia por defeito (para MVP single-barbershop)
-const DEFAULT_BARBEARIA_ID = '00000000-0000-0000-0000-000000000001';
-
-type ViewMode = 'queue' | 'calendar';
-
-function BarberDashboard() {
+// This page redirects barbers to their specific barbershop dashboard
+export default function BarbeiroIndexPage() {
     const router = useRouter();
     const supabase = createClient();
-    const [refreshKey, setRefreshKey] = useState(0);
-    const [queueOpen, setQueueOpen] = useState(true);
-    const [view, setView] = useState<ViewMode>('queue');
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Fetch queue status on mount
     useEffect(() => {
-        async function fetchStatus() {
+        async function redirectToShop() {
             try {
-                const response = await fetch(`/api/barbershop/status?barbearia_id=${DEFAULT_BARBEARIA_ID}`);
-                const result = await response.json();
-                if (result.success && result.data) {
-                    setQueueOpen(result.data.fila_aberta);
+                // Check if user is authenticated
+                const { data: { user } } = await supabase.auth.getUser();
+
+                if (!user) {
+                    router.push('/barbeiro/login');
+                    return;
                 }
-            } catch (error) {
-                console.log('Error fetching queue status:', error);
+
+                // Get user's barbershop from profile
+                const { data: profile, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('barbearia_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError || !profile?.barbearia_id) {
+                    setError('Conta de barbeiro não configurada. Contacte o administrador.');
+                    return;
+                }
+
+                // Get barbershop slug
+                const { data: shop, error: shopError } = await supabase
+                    .from('barbearias')
+                    .select('slug')
+                    .eq('id', profile.barbearia_id)
+                    .single();
+
+                if (shopError || !shop?.slug) {
+                    setError('Barbearia não encontrada. Contacte o administrador.');
+                    return;
+                }
+
+                // Redirect to specific barbershop dashboard
+                router.push(`/barbeiro/${shop.slug}`);
+
+            } catch {
+                setError('Erro ao carregar. Tente novamente.');
+            } finally {
+                setIsLoading(false);
             }
         }
-        fetchStatus();
-    }, []);
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push('/barbeiro/login');
-    };
+        redirectToShop();
+    }, [router, supabase]);
 
-    // Função para forçar refresh da lista quando um cliente é adicionado manualmente
-    const handleQueueRefresh = useCallback(() => {
-        setRefreshKey(prev => prev + 1);
-    }, []);
-
-    // Toggle queue open/closed
-    const handleQueueToggle = async (newState: boolean) => {
-        try {
-            const response = await fetch('/api/barbershop/status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    barbearia_id: DEFAULT_BARBEARIA_ID,
-                    fila_aberta: newState,
-                }),
-            });
-            const result = await response.json();
-            if (result.success) {
-                setQueueOpen(newState);
-            }
-        } catch (error) {
-            console.error('Error toggling queue:', error);
-            throw error;
-        }
-    };
+    if (error) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center max-w-md">
+                    <Scissors className="h-12 w-12 text-gold mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold mb-2">Erro</h1>
+                    <p className="text-muted-foreground mb-4">{error}</p>
+                    <button
+                        onClick={() => router.push('/barbeiro/login')}
+                        className="text-gold hover:underline"
+                    >
+                        Voltar ao Login
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-background">
-            {/* Header */}
-            <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
-                <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
-                            <Scissors className="h-5 w-5 text-gold" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold">Painel do Barbeiro</h1>
-                            <p className="text-sm text-muted-foreground">Ventus</p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <QueueToggle isOpen={queueOpen} onToggle={handleQueueToggle} />
-                        <Button variant="outline" size="sm" onClick={() => router.push('/barbeiro/settings')}>
-                            <Settings2 className="mr-2 h-4 w-4" />
-                            Definições
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={handleLogout}>
-                            <LogOut className="mr-2 h-4 w-4" />
-                            Sair
-                        </Button>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="container mx-auto px-4 py-8">
-                <div className="mx-auto max-w-4xl space-y-8">
-                    {/* View Toggle */}
-                    <div className="flex justify-center">
-                        <div className="inline-flex items-center rounded-lg border border-gold/20 bg-card p-1">
-                            <Button
-                                variant={view === 'queue' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setView('queue')}
-                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
-                            >
-                                Fila Virtual
-                            </Button>
-                            <Button
-                                variant={view === 'calendar' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setView('calendar')}
-                                className={view === 'calendar' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
-                            >
-                                Marcações
-                            </Button>
-                        </div>
-                    </div>
-
-                    {view === 'queue' ? (
-                        <div className="space-y-8">
-                            {/* Formulário de Entrada Manual */}
-                            <ManualEntryForm
-                                barbeariaId={DEFAULT_BARBEARIA_ID}
-                                onAdded={handleQueueRefresh}
-                            />
-
-                            {/* Lista da Fila */}
-                            <QueueList key={refreshKey} />
-
-                            {/* QR Code Section */}
-                            <div className="rounded-lg border border-gold/20 bg-card/50 p-6">
-                                <h2 className="mb-4 text-lg font-semibold">QR Code para Clientes</h2>
-                                <QRCodeDisplay />
-                            </div>
-                        </div>
-                    ) : (
-                        <BookingsCalendar barbearia_id={DEFAULT_BARBEARIA_ID} />
-                    )}
-                </div>
-            </main>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-gold mx-auto mb-4" />
+                <p className="text-muted-foreground">A carregar a sua barbearia...</p>
+            </div>
         </div>
     );
 }
-
-export default function BarbeiroPage() {
-    return (
-        <AuthGuard>
-            <BarberDashboard />
-        </AuthGuard>
-    );
-}
-
-

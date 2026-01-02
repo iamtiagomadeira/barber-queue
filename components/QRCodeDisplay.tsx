@@ -5,16 +5,22 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Copy, Download, Check, QrCode } from 'lucide-react';
 
-export default function QRCodeDisplay() {
+interface QRCodeDisplayProps {
+    barbershopSlug?: string;
+}
+
+export default function QRCodeDisplay({ barbershopSlug }: QRCodeDisplayProps) {
     const [appUrl, setAppUrl] = useState('');
     const [copied, setCopied] = useState(false);
     const qrRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Get current URL (works in development and production)
-        const url = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        // If we have a barbershop slug, use the slug-based URL
+        const url = barbershopSlug ? `${baseUrl}/b/${barbershopSlug}` : baseUrl;
         setAppUrl(url);
-    }, []);
+    }, [barbershopSlug]);
 
     const handleCopyUrl = async () => {
         await navigator.clipboard.writeText(appUrl);

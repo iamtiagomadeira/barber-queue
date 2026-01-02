@@ -62,7 +62,8 @@ const MOCK_QUEUE: QueueEntry[] = [
     },
 ];
 
-export default function QueueList() {
+export default function QueueList({ barbeariaId }: { barbeariaId?: string }) {
+    const effectiveBarbeariaId = barbeariaId || '00000000-0000-0000-0000-000000000001';
     const [queue, setQueue] = useState<QueueEntry[]>([]);
     const [currentCustomer, setCurrentCustomer] = useState<QueueEntry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +77,7 @@ export default function QueueList() {
         setIsLoading(true);
         try {
             // Use the API endpoint which handles both Supabase and in-memory queue
-            const response = await fetch('/api/queue/join?barbearia_id=00000000-0000-0000-0000-000000000001');
+            const response = await fetch(`/api/queue/join?barbearia_id=${effectiveBarbeariaId}`);
             const result = await response.json();
 
             if (result.success && result.data && result.data.length > 0) {
