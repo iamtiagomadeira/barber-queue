@@ -8,6 +8,7 @@ import { Clock, User, Phone, Scissors, CheckCircle, XCircle, RefreshCw, Loader2 
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { SmsFailedAlert } from '@/components/SmsFailedAlert';
+import { StatsCards } from './StatsCards';
 
 interface QueueEntry {
     id: string;
@@ -295,29 +296,16 @@ export default function QueueList() {
                     </Button>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                    <Card className="border-gold/20">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                Em Espera
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-gold">{waitingCount}</div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-gold/20">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">
-                                Em Corte
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold">{inServiceCount}</div>
-                        </CardContent>
-                    </Card>
-                </div>
+                {/* Enhanced Stats */}
+                <StatsCards
+                    waitingCount={waitingCount}
+                    inServiceCount={inServiceCount}
+                    completedToday={queue.filter(e => e.status === 'concluido').length}
+                    avgWaitTime={queue.length > 0
+                        ? Math.round(queue.reduce((acc, e) => acc + (e.tempo_espera_estimado || 0), 0) / queue.length)
+                        : 0
+                    }
+                />
 
                 {/* Current Customer */}
                 {currentCustomer && (

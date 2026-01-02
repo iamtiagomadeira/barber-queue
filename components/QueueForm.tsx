@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Scissors, Clock, Users, CreditCard, Loader2 } from 'lucide-react';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
+import { useConfetti } from '@/components/ConfettiCelebration';
 // Portugal only - no country selection needed
 import { createClient } from '@/lib/supabase/client';
 
@@ -55,6 +56,7 @@ export default function QueueForm() {
     const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
     const [error, setError] = useState<string | null>(null);
     const [highlightedCardIndex, setHighlightedCardIndex] = useState(0);
+    const { fireConfetti } = useConfetti();
 
     // Auto-rotate glow effect through cards when no service is selected
     useEffect(() => {
@@ -184,6 +186,8 @@ export default function QueueForm() {
             setQueuePosition(data.position || 3);
             setWaitTime(data.tempo_espera_estimado || (service?.duracao_media || 45) * 3);
             setStep('success');
+            // Fire confetti celebration!
+            fireConfetti();
         } catch (err) {
             console.error('[QueueForm] Error joining queue:', err);
             setError('Erro ao entrar na fila. O pagamento foi devolvido.');
