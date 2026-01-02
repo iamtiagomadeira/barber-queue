@@ -6,7 +6,7 @@ import QueueList from './components/QueueList';
 import ManualEntryForm from './components/ManualEntryForm';
 import { QueueToggle } from './components/QueueToggle';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { Scissors, LogOut } from 'lucide-react';
+import { Scissors, LogOut, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -89,6 +89,10 @@ function BarberDashboard() {
 
                     <div className="flex items-center gap-4">
                         <QueueToggle isOpen={queueOpen} onToggle={handleQueueToggle} />
+                        <Button variant="outline" size="sm" onClick={() => router.push('/barbeiro/settings')}>
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            Definições
+                        </Button>
                         <Button variant="outline" size="sm" onClick={handleLogout}>
                             <LogOut className="mr-2 h-4 w-4" />
                             Sair

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkQueueAvailability } from '@/lib/queue-logic';
 
 // Create a simple Supabase client for API routes
 function getSupabase() {
