@@ -368,6 +368,7 @@ export default function QueueForm() {
                 <CardContent>
                     <StripeCheckout
                         clientSecret={clientSecret}
+                        amount={5}
                         onSuccess={handlePaymentSuccess}
                         onCancel={handlePaymentCancel}
                     />

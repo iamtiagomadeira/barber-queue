@@ -11,14 +11,19 @@ import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+import BookingsCalendar from './components/BookingsCalendar';
+
 // ID da barbearia por defeito (para MVP single-barbershop)
 const DEFAULT_BARBEARIA_ID = '00000000-0000-0000-0000-000000000001';
+
+type ViewMode = 'queue' | 'calendar';
 
 function BarberDashboard() {
     const router = useRouter();
     const supabase = createClient();
     const [refreshKey, setRefreshKey] = useState(0);
     const [queueOpen, setQueueOpen] = useState(true);
+    const [view, setView] = useState<ViewMode>('queue');
 
     // Fetch queue status on mount
     useEffect(() => {
@@ -95,20 +100,48 @@ function BarberDashboard() {
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
                 <div className="mx-auto max-w-4xl space-y-8">
-                    {/* Formulário de Entrada Manual */}
-                    <ManualEntryForm
-                        barbeariaId={DEFAULT_BARBEARIA_ID}
-                        onAdded={handleQueueRefresh}
-                    />
-
-                    {/* Lista da Fila */}
-                    <QueueList key={refreshKey} />
-
-                    {/* QR Code Section */}
-                    <div className="rounded-lg border border-gold/20 bg-card/50 p-6">
-                        <h2 className="mb-4 text-lg font-semibold">QR Code para Clientes</h2>
-                        <QRCodeDisplay />
+                    {/* View Toggle */}
+                    <div className="flex justify-center">
+                        <div className="inline-flex items-center rounded-lg border border-gold/20 bg-card p-1">
+                            <Button
+                                variant={view === 'queue' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setView('queue')}
+                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                            >
+                                Fila Virtual
+                            </Button>
+                            <Button
+                                variant={view === 'calendar' ? 'default' : 'ghost'}
+                                size="sm"
+                                onClick={() => setView('calendar')}
+                                className={view === 'calendar' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                            >
+                                Marcações
+                            </Button>
+                        </div>
                     </div>
+
+                    {view === 'queue' ? (
+                        <div className="space-y-8">
+                            {/* Formulário de Entrada Manual */}
+                            <ManualEntryForm
+                                barbeariaId={DEFAULT_BARBEARIA_ID}
+                                onAdded={handleQueueRefresh}
+                            />
+
+                            {/* Lista da Fila */}
+                            <QueueList key={refreshKey} />
+
+                            {/* QR Code Section */}
+                            <div className="rounded-lg border border-gold/20 bg-card/50 p-6">
+                                <h2 className="mb-4 text-lg font-semibold">QR Code para Clientes</h2>
+                                <QRCodeDisplay />
+                            </div>
+                        </div>
+                    ) : (
+                        <BookingsCalendar barbearia_id={DEFAULT_BARBEARIA_ID} />
+                    )}
                 </div>
             </main>
         </div>

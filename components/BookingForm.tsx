@@ -292,6 +292,7 @@ export default function BookingForm() {
                 <CardContent>
                     <StripeCheckout
                         clientSecret={clientSecret}
+                        amount={service?.preco || 0}
                         onSuccess={handlePaymentSuccess}
                         onCancel={prevStep}
                     />

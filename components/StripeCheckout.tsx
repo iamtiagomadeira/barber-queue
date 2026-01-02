@@ -17,11 +17,12 @@ const stripePromise = loadStripe(
 );
 
 interface CheckoutFormProps {
+    amount: number; // in euros
     onSuccess: (paymentIntentId: string) => void;
     onCancel: () => void;
 }
 
-function CheckoutForm({ onSuccess, onCancel }: CheckoutFormProps) {
+function CheckoutForm({ amount, onSuccess, onCancel }: CheckoutFormProps) {
     const stripe = useStripe();
     const elements = useElements();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -101,14 +102,14 @@ function CheckoutForm({ onSuccess, onCancel }: CheckoutFormProps) {
                     ) : (
                         <>
                             <Scissors className="mr-2 h-4 w-4" />
-                            Pagar 5€
+                            Pagar {amount}€
                         </>
                     )}
                 </Button>
             </div>
 
             <p className="text-center text-xs text-muted-foreground">
-                💳 Este é um hold de 5€ que será devolvido após o serviço
+                💳 Este valor será cobrado para confirmar a sua marcação
             </p>
         </form>
     );
@@ -116,12 +117,14 @@ function CheckoutForm({ onSuccess, onCancel }: CheckoutFormProps) {
 
 interface StripeCheckoutProps {
     clientSecret: string;
+    amount: number; // in euros
     onSuccess: (paymentIntentId: string) => void;
     onCancel: () => void;
 }
 
 export default function StripeCheckout({
     clientSecret,
+    amount,
     onSuccess,
     onCancel,
 }: StripeCheckoutProps) {
@@ -142,7 +145,7 @@ export default function StripeCheckout({
 
     return (
         <Elements stripe={stripePromise} options={options}>
-            <CheckoutForm onSuccess={onSuccess} onCancel={onCancel} />
+            <CheckoutForm amount={amount} onSuccess={onSuccess} onCancel={onCancel} />
         </Elements>
     );
 }

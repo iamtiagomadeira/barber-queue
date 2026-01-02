@@ -69,12 +69,18 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Get service duration
-        const { data: servico } = await supabase
-            .from('servicos')
-            .select('duracao_media')
-            .eq('id', servico_id)
-            .single();
+        // Get service duration if servico_id is a valid UUID
+        let servicoDuracao = 30;
+        const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(servico_id || '');
+
+        if (isValidUUID) {
+            const { data: servico } = await supabase
+                .from('servicos')
+                .select('duracao_media')
+                .eq('id', servico_id)
+                .single();
+            servicoDuracao = servico?.duracao_media || 30;
+        }
 
         // Create booking
         const { data: booking, error } = await supabase
@@ -82,14 +88,14 @@ export async function POST(request: NextRequest) {
             .insert({
                 barbearia_id,
                 barbeiro_id: barbeiro_id === 'any' ? null : barbeiro_id,
-                servico_id,
+                servico_id: isValidUUID ? servico_id : null, // Only include if valid UUID
                 cliente_nome,
                 cliente_telefone,
                 cliente_email,
                 cliente_nif,
                 data,
                 hora,
-                duracao_minutos: servico?.duracao_media || 30,
+                duracao_minutos: servicoDuracao,
                 status: deposito_id ? 'confirmada' : 'pendente',
                 deposito_pago: !!deposito_id,
                 deposito_id,
@@ -124,7 +130,9 @@ export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
         const barbearia_id = searchParams.get('barbearia_id') || DEFAULT_BARBEARIA_ID;
-        const data = searchParams.get('data'); // YYYY-MM-DD
+        const data = searchParams.get('data'); // YYYY-MM-DD (exact match)
+        const startDate = searchParams.get('start_date'); // YYYY-MM-DD (range start)
+        const endDate = searchParams.get('end_date'); // YYYY-MM-DD (range end)
         const barbeiro_id = searchParams.get('barbeiro_id');
 
         const supabase = getSupabase();
@@ -137,10 +145,13 @@ export async function GET(request: NextRequest) {
             .from('marcacoes')
             .select('*, barbeiro:barbeiros(nome, foto_url), servico:servicos(nome, preco, duracao_media)')
             .eq('barbearia_id', barbearia_id)
+            .order('data', { ascending: true })
             .order('hora', { ascending: true });
 
         if (data) {
             query = query.eq('data', data);
+        } else if (startDate && endDate) {
+            query = query.gte('data', startDate).lte('data', endDate);
         }
 
         if (barbeiro_id) {
