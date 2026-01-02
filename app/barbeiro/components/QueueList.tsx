@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, User, Phone, Scissors, CheckCircle, XCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { SmsFailedAlert } from '@/components/SmsFailedAlert';
 
 interface QueueEntry {
     id: string;
@@ -65,6 +66,7 @@ export default function QueueList() {
     const [currentCustomer, setCurrentCustomer] = useState<QueueEntry | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [smsFailedAlert, setSmsFailedAlert] = useState<{ name: string; phone: string } | null>(null);
     const supabase = createClient();
     const { toast } = useToast();
 
@@ -170,18 +172,16 @@ export default function QueueList() {
             console.log('SMS result:', smsResult);
 
             if (!smsResult.success) {
-                toast({
-                    variant: "destructive",
-                    title: "⚠️ SMS não enviado",
-                    description: `Por favor ligue ao cliente: ${nextCustomer.cliente_telefone}`,
+                setSmsFailedAlert({
+                    name: nextCustomer.cliente_nome,
+                    phone: nextCustomer.cliente_telefone,
                 });
             }
         } catch (smsError) {
             console.log('SMS notification failed:', smsError);
-            toast({
-                variant: "destructive",
-                title: "⚠️ SMS não enviado",
-                description: `Por favor ligue ao cliente: ${nextCustomer.cliente_telefone}`,
+            setSmsFailedAlert({
+                name: nextCustomer.cliente_nome,
+                phone: nextCustomer.cliente_telefone,
             });
         }
 
@@ -279,177 +279,187 @@ export default function QueueList() {
     const inServiceCount = queue.filter((entry) => entry.status === 'em_corte').length;
 
     return (
-        <div className="space-y-6">
-            {/* Header with Refresh */}
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Gestão da Fila</h2>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={fetchQueue}
-                    disabled={isLoading}
-                >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    Atualizar
-                </Button>
-            </div>
+        <>
+            <div className="space-y-6">
+                {/* Header with Refresh */}
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Gestão da Fila</h2>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchQueue}
+                        disabled={isLoading}
+                    >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                        Atualizar
+                    </Button>
+                </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-                <Card className="border-gold/20">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Em Espera
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-gold">{waitingCount}</div>
-                    </CardContent>
-                </Card>
-                <Card className="border-gold/20">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Em Corte
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{inServiceCount}</div>
-                    </CardContent>
-                </Card>
-            </div>
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Card className="border-gold/20">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Em Espera
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-gold">{waitingCount}</div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-gold/20">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-medium text-muted-foreground">
+                                Em Corte
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{inServiceCount}</div>
+                        </CardContent>
+                    </Card>
+                </div>
 
-            {/* Current Customer */}
-            {currentCustomer && (
-                <Card className="border-gold bg-gold/5">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Scissors className="h-5 w-5 text-gold" />
-                            Cliente Atual
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-lg font-semibold">
-                                <User className="h-5 w-5 text-gold" />
-                                {currentCustomer.cliente_nome}
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Phone className="h-4 w-4" />
-                                {currentCustomer.cliente_telefone}
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                                <Scissors className="h-4 w-4" />
-                                {currentCustomer.servico?.nome || 'Serviço'} ({currentCustomer.servico?.duracao_media || 30} min)
-                            </div>
-                            {currentCustomer.deposito_id && (
-                                <Badge variant="outline" className="border-green-500/50 text-green-500">
-                                    💳 Depósito pago
-                                </Badge>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button
-                                onClick={handleComplete}
-                                disabled={actionLoading === 'complete'}
-                                className="kiosk-button bg-gold text-black hover:bg-gold/90"
-                            >
-                                {actionLoading === 'complete' ? (
-                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                                ) : (
-                                    <CheckCircle className="mr-2 h-6 w-6" />
-                                )}
-                                Completar
-                            </Button>
-                            <Button
-                                onClick={() => handleNoShow(currentCustomer)}
-                                disabled={actionLoading === currentCustomer.id}
-                                variant="destructive"
-                                className="kiosk-button"
-                            >
-                                {actionLoading === currentCustomer.id ? (
-                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                                ) : (
-                                    <XCircle className="mr-2 h-6 w-6" />
-                                )}
-                                No-Show
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-1 gap-4">
-                <Button
-                    onClick={handleCallNext}
-                    disabled={waitingCount === 0 || currentCustomer !== null || actionLoading === 'call'}
-                    className="kiosk-button bg-gold text-black hover:bg-gold/90 disabled:opacity-50"
-                >
-                    {actionLoading === 'call' ? (
-                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                    ) : (
-                        <User className="mr-2 h-6 w-6" />
-                    )}
-                    Chamar Próximo
-                </Button>
-            </div>
-
-            {/* Queue List */}
-            <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Fila de Espera</h3>
-                {queue
-                    .filter((entry) => entry.status === 'em_espera')
-                    .sort((a, b) => a.posicao - b.posicao)
-                    .map((entry) => (
-                        <Card key={entry.id} className="border-border/50">
-                            <CardContent className="flex items-center justify-between p-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-lg font-bold text-gold">
-                                        {entry.posicao}
-                                    </div>
-                                    <div>
-                                        <div className="font-semibold">{entry.cliente_nome}</div>
-                                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                            <span className="flex items-center gap-1">
-                                                <Phone className="h-3 w-3" />
-                                                {entry.cliente_telefone}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Scissors className="h-3 w-3" />
-                                                {entry.servico?.nome || 'Serviço'}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <Clock className="h-3 w-3" />
-                                                ~{formatWaitTime(entry.tempo_espera_estimado)}
-                                            </span>
-                                        </div>
-                                    </div>
+                {/* Current Customer */}
+                {currentCustomer && (
+                    <Card className="border-gold bg-gold/5">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Scissors className="h-5 w-5 text-gold" />
+                                Cliente Atual
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-lg font-semibold">
+                                    <User className="h-5 w-5 text-gold" />
+                                    {currentCustomer.cliente_nome}
                                 </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Phone className="h-4 w-4" />
+                                    {currentCustomer.cliente_telefone}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                    <Scissors className="h-4 w-4" />
+                                    {currentCustomer.servico?.nome || 'Serviço'} ({currentCustomer.servico?.duracao_media || 30} min)
+                                </div>
+                                {currentCustomer.deposito_id && (
+                                    <Badge variant="outline" className="border-green-500/50 text-green-500">
+                                        💳 Depósito pago
+                                    </Badge>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
                                 <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleNoShow(entry)}
-                                    disabled={actionLoading === entry.id}
-                                    className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                                    onClick={handleComplete}
+                                    disabled={actionLoading === 'complete'}
+                                    className="kiosk-button bg-gold text-black hover:bg-gold/90"
                                 >
-                                    {actionLoading === entry.id ? (
-                                        <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                    {actionLoading === 'complete' ? (
+                                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
                                     ) : (
-                                        <XCircle className="mr-1 h-4 w-4" />
+                                        <CheckCircle className="mr-2 h-6 w-6" />
+                                    )}
+                                    Completar
+                                </Button>
+                                <Button
+                                    onClick={() => handleNoShow(currentCustomer)}
+                                    disabled={actionLoading === currentCustomer.id}
+                                    variant="destructive"
+                                    className="kiosk-button"
+                                >
+                                    {actionLoading === currentCustomer.id ? (
+                                        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                                    ) : (
+                                        <XCircle className="mr-2 h-6 w-6" />
                                     )}
                                     No-Show
                                 </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
-                {waitingCount === 0 && (
-                    <Card className="border-dashed">
-                        <CardContent className="py-12 text-center text-muted-foreground">
-                            Nenhum cliente em espera
+                            </div>
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-1 gap-4">
+                    <Button
+                        onClick={handleCallNext}
+                        disabled={waitingCount === 0 || currentCustomer !== null || actionLoading === 'call'}
+                        className="kiosk-button bg-gold text-black hover:bg-gold/90 disabled:opacity-50"
+                    >
+                        {actionLoading === 'call' ? (
+                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                        ) : (
+                            <User className="mr-2 h-6 w-6" />
+                        )}
+                        Chamar Próximo
+                    </Button>
+                </div>
+
+                {/* Queue List */}
+                <div className="space-y-3">
+                    <h3 className="text-lg font-semibold">Fila de Espera</h3>
+                    {queue
+                        .filter((entry) => entry.status === 'em_espera')
+                        .sort((a, b) => a.posicao - b.posicao)
+                        .map((entry) => (
+                            <Card key={entry.id} className="border-border/50">
+                                <CardContent className="flex items-center justify-between p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10 text-lg font-bold text-gold">
+                                            {entry.posicao}
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold">{entry.cliente_nome}</div>
+                                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <Phone className="h-3 w-3" />
+                                                    {entry.cliente_telefone}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Scissors className="h-3 w-3" />
+                                                    {entry.servico?.nome || 'Serviço'}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" />
+                                                    ~{formatWaitTime(entry.tempo_espera_estimado)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleNoShow(entry)}
+                                        disabled={actionLoading === entry.id}
+                                        className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                                    >
+                                        {actionLoading === entry.id ? (
+                                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <XCircle className="mr-1 h-4 w-4" />
+                                        )}
+                                        No-Show
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    {waitingCount === 0 && (
+                        <Card className="border-dashed">
+                            <CardContent className="py-12 text-center text-muted-foreground">
+                                Nenhum cliente em espera
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </div>
-        </div>
+
+            {/* SMS Failed Alert Modal */}
+            <SmsFailedAlert
+                isOpen={!!smsFailedAlert}
+                onClose={() => setSmsFailedAlert(null)}
+                customerName={smsFailedAlert?.name || ''}
+                customerPhone={smsFailedAlert?.phone || ''}
+            />
+        </>
     );
 }

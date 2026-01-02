@@ -1,21 +1,32 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import QueueList from './components/QueueList';
+import ManualEntryForm from './components/ManualEntryForm';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Scissors, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+// ID da barbearia por defeito (para MVP single-barbershop)
+const DEFAULT_BARBEARIA_ID = '00000000-0000-0000-0000-000000000001';
+
 function BarberDashboard() {
     const router = useRouter();
     const supabase = createClient();
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
         router.push('/barbeiro/login');
     };
+
+    // Função para forçar refresh da lista quando um cliente é adicionado manualmente
+    const handleQueueRefresh = useCallback(() => {
+        setRefreshKey(prev => prev + 1);
+    }, []);
 
     return (
         <div className="min-h-screen bg-background">
@@ -28,7 +39,7 @@ function BarberDashboard() {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold">Painel do Barbeiro</h1>
-                            <p className="text-sm text-muted-foreground">Kiosk Mode</p>
+                            <p className="text-sm text-muted-foreground">Ventus</p>
                         </div>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -41,7 +52,14 @@ function BarberDashboard() {
             {/* Main Content */}
             <main className="container mx-auto px-4 py-8">
                 <div className="mx-auto max-w-4xl space-y-8">
-                    <QueueList />
+                    {/* Formulário de Entrada Manual */}
+                    <ManualEntryForm
+                        barbeariaId={DEFAULT_BARBEARIA_ID}
+                        onAdded={handleQueueRefresh}
+                    />
+
+                    {/* Lista da Fila */}
+                    <QueueList key={refreshKey} />
 
                     {/* QR Code Section */}
                     <div className="rounded-lg border border-gold/20 bg-card/50 p-6">
@@ -61,3 +79,4 @@ export default function BarbeiroPage() {
         </AuthGuard>
     );
 }
+
