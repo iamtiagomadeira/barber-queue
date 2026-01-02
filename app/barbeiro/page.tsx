@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import QueueList from './components/QueueList';
 import ManualEntryForm from './components/ManualEntryForm';
+import { QueueToggle } from './components/QueueToggle';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
 import { Scissors, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,23 @@ function BarberDashboard() {
     const router = useRouter();
     const supabase = createClient();
     const [refreshKey, setRefreshKey] = useState(0);
+    const [queueOpen, setQueueOpen] = useState(true);
+
+    // Fetch queue status on mount
+    useEffect(() => {
+        async function fetchStatus() {
+            try {
+                const response = await fetch(`/api/barbershop/status?barbearia_id=${DEFAULT_BARBEARIA_ID}`);
+                const result = await response.json();
+                if (result.success && result.data) {
+                    setQueueOpen(result.data.fila_aberta);
+                }
+            } catch (error) {
+                console.log('Error fetching queue status:', error);
+            }
+        }
+        fetchStatus();
+    }, []);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -27,6 +45,27 @@ function BarberDashboard() {
     const handleQueueRefresh = useCallback(() => {
         setRefreshKey(prev => prev + 1);
     }, []);
+
+    // Toggle queue open/closed
+    const handleQueueToggle = async (newState: boolean) => {
+        try {
+            const response = await fetch('/api/barbershop/status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    barbearia_id: DEFAULT_BARBEARIA_ID,
+                    fila_aberta: newState,
+                }),
+            });
+            const result = await response.json();
+            if (result.success) {
+                setQueueOpen(newState);
+            }
+        } catch (error) {
+            console.error('Error toggling queue:', error);
+            throw error;
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background">
@@ -42,10 +81,14 @@ function BarberDashboard() {
                             <p className="text-sm text-muted-foreground">Ventus</p>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Sair
-                    </Button>
+
+                    <div className="flex items-center gap-4">
+                        <QueueToggle isOpen={queueOpen} onToggle={handleQueueToggle} />
+                        <Button variant="outline" size="sm" onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Sair
+                        </Button>
+                    </div>
                 </div>
             </header>
 
@@ -79,4 +122,5 @@ export default function BarbeiroPage() {
         </AuthGuard>
     );
 }
+
 

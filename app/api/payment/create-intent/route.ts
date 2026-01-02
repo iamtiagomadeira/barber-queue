@@ -1,27 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, DEPOSIT_AMOUNT, DEPOSIT_CURRENCY } from '@/lib/stripe';
+import { stripe, DEPOSIT_CURRENCY } from '@/lib/stripe';
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { customer_name, customer_phone, service_name } = body;
+        const {
+            amount,
+            customer_name,
+            customer_email,
+            customer_phone,
+            service_name,
+            service_price,
+            barber_name,
+            booking_date,
+            booking_time,
+            metadata = {}
+        } = body;
 
-        // Create a PaymentIntent with automatic capture disabled (authorization only)
-        // automatic_payment_methods enables MB WAY, Apple Pay, Google Pay based on location/device
+        // Use provided amount or default deposit
+        const paymentAmount = amount || 500; // €5.00 default
+
+        // Build description for receipt
+        const description = [
+            `Ventus - ${service_name}`,
+            barber_name ? `Barbeiro: ${barber_name}` : null,
+            booking_date ? `Data: ${booking_date}` : null,
+            booking_time ? `Hora: ${booking_time}` : null,
+        ].filter(Boolean).join(' | ');
+
+        // Create PaymentIntent with full details
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: DEPOSIT_AMOUNT,
+            amount: paymentAmount,
             currency: DEPOSIT_CURRENCY,
-            capture_method: 'manual', // This creates a hold, not an immediate charge
+            capture_method: 'manual', // Hold, not immediate charge
             automatic_payment_methods: {
                 enabled: true,
             },
+            // Receipt email - Stripe will send receipt to this email
+            receipt_email: customer_email || undefined,
+            // Description appears on customer's bank statement and receipt
+            description: description,
+            // Statement descriptor (max 22 chars, appears on bank statement)
+            statement_descriptor_suffix: 'VENTUS',
+            // All booking details in metadata
             metadata: {
-                customer_name,
-                customer_phone,
-                service_name,
-                type: 'queue_deposit',
+                type: 'booking_deposit',
+                customer_name: customer_name || '',
+                customer_email: customer_email || '',
+                customer_phone: customer_phone || '',
+                service_name: service_name || '',
+                service_price: service_price?.toString() || '',
+                barber_name: barber_name || '',
+                booking_date: booking_date || '',
+                booking_time: booking_time || '',
+                ...metadata,
             },
-            description: `Depósito de fila - ${service_name} - ${customer_name}`,
         });
 
         return NextResponse.json({

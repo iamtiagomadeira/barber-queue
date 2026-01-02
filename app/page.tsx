@@ -1,4 +1,4 @@
-import QueueForm from '@/components/QueueForm';
+import BookingForm from '@/components/BookingForm';
 import { Footer } from '@/components/blocks/footer-section';
 import { Scissors, Clock, Shield } from 'lucide-react';
 
@@ -16,22 +16,22 @@ export default function Home() {
             </div>
 
             <h1 className="mb-4 text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl">
-              Elimine a Espera
+              Marque o Seu
               <br />
               <span className="bg-gradient-to-r from-gold via-gold-light to-gold bg-clip-text text-transparent">
-                Física
+                Corte
               </span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Entre na fila virtual da sua barbearia favorita.
-              Receba notificação quando for a sua vez.
-              <strong className="text-foreground"> Sem stress, sem drama.</strong>
+              Escolha o seu barbeiro, a hora que prefere, e pague online.
+              Receba confirmação imediata.
+              <strong className="text-foreground"> Zero espera, máximo estilo.</strong>
             </p>
           </div>
 
-          {/* Queue Form */}
-          <QueueForm />
+          {/* Booking Form */}
+          <BookingForm />
 
           {/* Features */}
           <div className="grid w-full max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3">

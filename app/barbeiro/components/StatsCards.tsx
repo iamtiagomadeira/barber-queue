@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, Clock, UserCheck, TrendingUp } from 'lucide-react';
+import { Users, Clock, UserCheck, CheckCircle2 } from 'lucide-react';
 
 interface StatsCardsProps {
     waitingCount: number;
@@ -13,29 +13,29 @@ interface StatsCardsProps {
 export function StatsCards({ waitingCount, inServiceCount, completedToday, avgWaitTime }: StatsCardsProps) {
     const stats = [
         {
-            label: 'Em Espera',
+            label: 'Na Fila',
             value: waitingCount,
             icon: Users,
             color: 'text-gold',
             bgColor: 'bg-gold/10',
         },
         {
-            label: 'Em Atendimento',
+            label: 'A Cortar',
             value: inServiceCount,
             icon: UserCheck,
             color: 'text-green-500',
             bgColor: 'bg-green-500/10',
         },
         {
-            label: 'Hoje',
+            label: 'Finalizados',
             value: completedToday,
-            icon: TrendingUp,
+            icon: CheckCircle2,
             color: 'text-blue-500',
             bgColor: 'bg-blue-500/10',
         },
         {
-            label: 'Tempo Médio',
-            value: `${avgWaitTime}m`,
+            label: 'Espera Média',
+            value: `${avgWaitTime}min`,
             icon: Clock,
             color: 'text-purple-500',
             bgColor: 'bg-purple-500/10',
@@ -53,7 +53,7 @@ export function StatsCards({ waitingCount, inServiceCount, completedToday, avgWa
                             </div>
                             <div>
                                 <p className="text-2xl font-bold">{stat.value}</p>
-                                <p className="text-xs text-muted-foreground">{stat.label}</p>
+                                <p className="text-sm text-muted-foreground">{stat.label}</p>
                             </div>
                         </div>
                     </CardContent>

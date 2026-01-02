@@ -56,6 +56,7 @@ export default function QueueForm() {
     const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
     const [error, setError] = useState<string | null>(null);
     const [highlightedCardIndex, setHighlightedCardIndex] = useState(0);
+    const [queueOpen, setQueueOpen] = useState<boolean | null>(null);
     const { fireConfetti } = useConfetti();
 
     // Auto-rotate glow effect through cards when no service is selected
@@ -87,6 +88,25 @@ export default function QueueForm() {
             }
         }
         fetchServices();
+    }, []);
+
+    // Check if queue is open
+    useEffect(() => {
+        async function fetchQueueStatus() {
+            try {
+                const response = await fetch('/api/barbershop/status?barbearia_id=00000000-0000-0000-0000-000000000001');
+                const result = await response.json();
+                if (result.success && result.data) {
+                    setQueueOpen(result.data.fila_aberta);
+                } else {
+                    setQueueOpen(true); // Default to open if can't fetch
+                }
+            } catch (err) {
+                console.log('Could not fetch queue status, defaulting to open');
+                setQueueOpen(true);
+            }
+        }
+        fetchQueueStatus();
     }, []);
 
     // Validate Portuguese phone number (9 digits, starts with 9)
@@ -249,6 +269,44 @@ export default function QueueForm() {
         setTelefone('');
         setSelectedService('');
     };
+
+    // Queue closed view
+    if (queueOpen === false) {
+        return (
+            <Card className="w-full max-w-md border-destructive/30 bg-card/50 backdrop-blur-sm">
+                <CardHeader className="text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
+                        <Clock className="h-8 w-8 text-destructive" />
+                    </div>
+                    <CardTitle className="text-2xl">Fila Temporariamente Fechada</CardTitle>
+                    <CardDescription>
+                        A barbearia não está a aceitar novos clientes neste momento.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 text-center">
+                    <p className="text-muted-foreground">
+                        Por favor, tente novamente mais tarde ou contacte directamente a barbearia.
+                    </p>
+                    <div className="rounded-lg border border-gold/20 bg-gold/5 p-4">
+                        <p className="text-sm text-muted-foreground">
+                            💡 Os clientes já em fila continuarão a ser atendidos normalmente.
+                        </p>
+                    </div>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    // Loading state
+    if (queueOpen === null) {
+        return (
+            <Card className="w-full max-w-md border-gold/20 bg-card/50 backdrop-blur-sm">
+                <CardContent className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-gold" />
+                </CardContent>
+            </Card>
+        );
+    }
 
     // Success view
     if (step === 'success' && queuePosition !== null) {
