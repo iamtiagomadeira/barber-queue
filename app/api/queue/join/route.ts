@@ -68,13 +68,17 @@ export async function POST(request: NextRequest) {
                     // Try to insert into Supabase queue
                     const { data: currentQueue } = await supabase
                         .from('fila_virtual')
-                        .select('*')
+                        .select('*, servico:servicos(duracao_media)')
                         .eq('barbearia_id', barbearia_id || '00000000-0000-0000-0000-000000000001')
                         .in('status', ['em_espera', 'em_corte']);
 
                     const posicao = (currentQueue?.length || 0) + 1;
-                    const tempo_espera_estimado = (currentQueue || []).reduce((acc) => {
-                        return acc + (servico.duracao_media || 30);
+                    // Calculate wait time based on preceding customers' service durations
+                    // First customer has 0 wait time
+                    const tempo_espera_estimado = (currentQueue || []).reduce((acc, item) => {
+                        // Use the service duration from each queue item, or default 30min
+                        const itemDuration = item.servico?.duracao_media || 30;
+                        return acc + itemDuration;
                     }, 0);
 
                     const { data: newEntry, error: insertError } = await supabase
@@ -178,11 +182,16 @@ export async function GET(request: NextRequest) {
         // Try Supabase first for queue data
         if (supabase) {
             try {
+                // Get today's start for filtering completed records
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 const { data, error } = await supabase
                     .from('fila_virtual')
                     .select('*, servico:servicos(*)')
                     .eq('barbearia_id', barbearia_id || '00000000-0000-0000-0000-000000000001')
-                    .in('status', ['em_espera', 'em_corte'])
+                    .in('status', ['em_espera', 'em_corte', 'concluido', 'no_show'])
+                    .gte('created_at', today.toISOString())
                     .order('posicao', { ascending: true });
 
                 if (!error && data && data.length > 0) {
