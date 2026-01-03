@@ -98,7 +98,7 @@ export default function BookingDetailsModal({
                                     <DialogTitle className="text-xl font-semibold text-white">
                                         {booking.cliente_nome}
                                     </DialogTitle>
-                                    <Badge className={`mt-1 border-0 ${statusConfig.bgColor}`}>
+                                    <Badge className={`mt-1 border-0 pointer-events-none cursor-default ${statusConfig.bgColor}`}>
                                         <span className={`w-2 h-2 rounded-full mr-2 ${statusConfig.dotColor}`} />
                                         {statusConfig.label}
                                     </Badge>
@@ -199,8 +199,8 @@ export default function BookingDetailsModal({
                                 onClick={() => handleStatusChange('em_atendimento')}
                                 disabled={isUpdating}
                                 className={`w-full h-12 font-semibold ${booking.status === 'confirmada'
-                                        ? 'bg-gold hover:bg-gold/90 text-black'
-                                        : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700'
+                                    ? 'bg-gold hover:bg-gold/90 text-black'
+                                    : 'bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700'
                                     }`}
                             >
                                 {actionInProgress === 'em_atendimento' ? (
