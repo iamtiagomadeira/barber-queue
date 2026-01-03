@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Service {
     id: string;
@@ -50,6 +51,20 @@ interface Barbershop {
 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+// Service templates for quick setup
+const SERVICE_TEMPLATES = [
+    { nome: 'Corte Clássico', duracao_media: 30, precoSugerido: 12 },
+    { nome: 'Corte Fade', duracao_media: 45, precoSugerido: 15 },
+    { nome: 'Corte Degradê', duracao_media: 40, precoSugerido: 14 },
+    { nome: 'Barba', duracao_media: 20, precoSugerido: 8 },
+    { nome: 'Corte + Barba', duracao_media: 50, precoSugerido: 20 },
+    { nome: 'Riscos/Design', duracao_media: 15, precoSugerido: 5 },
+    { nome: 'Sobrancelhas', duracao_media: 10, precoSugerido: 5 },
+    { nome: 'Coloração', duracao_media: 60, precoSugerido: 25 },
+    { nome: 'Tratamento Capilar', duracao_media: 30, precoSugerido: 15 },
+    { nome: 'Kids (Criança)', duracao_media: 25, precoSugerido: 10 },
+];
+
 type TabType = 'services' | 'schedule' | 'profile';
 
 function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
@@ -60,6 +75,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [isSaving, setIsSaving] = useState(false);
     const [editingService, setEditingService] = useState<string | null>(null);
     const [newService, setNewService] = useState<Partial<Service> | null>(null);
+    const { toast } = useToast();
 
     const fetchServices = useCallback(async () => {
         try {
@@ -170,9 +186,27 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                     schedule,
                 }),
             });
-            await response.json();
+            const result = await response.json();
+            if (result.success) {
+                toast({
+                    title: '✅ Guardado',
+                    description: 'Horário atualizado com sucesso!',
+                    className: 'bg-green-600 text-white border-green-700',
+                });
+            } else {
+                toast({
+                    title: 'Erro',
+                    description: 'Não foi possível guardar o horário.',
+                    variant: 'destructive',
+                });
+            }
         } catch (error) {
             console.error('Error saving schedule:', error);
+            toast({
+                title: 'Erro',
+                description: 'Erro ao guardar horário.',
+                variant: 'destructive',
+            });
         } finally {
             setIsSaving(false);
         }
@@ -242,8 +276,36 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
 
                                     {newService && (
                                         <Card className="border-gold/50 bg-gold/5">
-                                            <CardContent className="p-4">
-                                                <div className="grid gap-4 sm:grid-cols-4">
+                                            <CardContent className="p-4 space-y-4">
+                                                {/* Template selector */}
+                                                <div>
+                                                    <Label>Escolher template</Label>
+                                                    <select
+                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                                        value=""
+                                                        onChange={(e) => {
+                                                            const template = SERVICE_TEMPLATES.find(t => t.nome === e.target.value);
+                                                            if (template) {
+                                                                setNewService({
+                                                                    nome: template.nome,
+                                                                    duracao_media: template.duracao_media,
+                                                                    preco: template.precoSugerido,
+                                                                    activo: true,
+                                                                });
+                                                            }
+                                                        }}
+                                                    >
+                                                        <option value="">Seleccionar serviço...</option>
+                                                        {SERVICE_TEMPLATES.map(t => (
+                                                            <option key={t.nome} value={t.nome}>
+                                                                {t.nome} ({t.duracao_media}min - €{t.precoSugerido} sugerido)
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+
+                                                {/* Manual fields */}
+                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                                                     <div>
                                                         <Label>Nome</Label>
                                                         <Input
@@ -269,14 +331,17 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                             onChange={(e) => setNewService(prev => ({ ...prev!, preco: parseFloat(e.target.value) || 0 }))}
                                                         />
                                                     </div>
-                                                    <div className="flex items-end gap-2">
-                                                        <Button onClick={handleCreateService} disabled={isSaving}>
-                                                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                                        </Button>
-                                                        <Button variant="ghost" onClick={() => setNewService(null)}>
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
+                                                </div>
+
+                                                {/* Actions - full width on mobile */}
+                                                <div className="flex gap-2 pt-2">
+                                                    <Button onClick={handleCreateService} disabled={isSaving} className="flex-1 sm:flex-none">
+                                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                                                        Adicionar
+                                                    </Button>
+                                                    <Button variant="ghost" onClick={() => setNewService(null)}>
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
                                                 </div>
                                             </CardContent>
                                         </Card>
@@ -371,11 +436,22 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                     <Card>
                                         <CardContent className="p-4 space-y-4">
                                             {schedule.map(entry => (
-                                                <div key={entry.dia_semana} className="flex items-center gap-4 border-b border-border/30 pb-4 last:border-0 last:pb-0">
-                                                    <div className="w-24">
+                                                <div key={entry.dia_semana} className="flex flex-col sm:flex-row sm:items-center gap-3 border-b border-border/30 pb-4 last:border-0 last:pb-0">
+                                                    <div className="w-full sm:w-24 flex justify-between sm:block">
                                                         <span className="font-medium">{DIAS_SEMANA[entry.dia_semana]}</span>
+                                                        {/* Mobile: show status inline */}
+                                                        <div className="sm:hidden flex items-center gap-2">
+                                                            <Switch
+                                                                checked={!entry.fechado}
+                                                                onCheckedChange={(checked) => handleScheduleChange(entry.dia_semana, 'fechado', !checked)}
+                                                            />
+                                                            <span className="text-sm text-muted-foreground">
+                                                                {entry.fechado ? 'Fechado' : 'Aberto'}
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    {/* Desktop: separate status toggle */}
+                                                    <div className="hidden sm:flex items-center gap-2">
                                                         <Switch
                                                             checked={!entry.fechado}
                                                             onCheckedChange={(checked) => handleScheduleChange(entry.dia_semana, 'fechado', !checked)}
@@ -390,14 +466,14 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                                 type="time"
                                                                 value={entry.hora_abertura}
                                                                 onChange={(e) => handleScheduleChange(entry.dia_semana, 'hora_abertura', e.target.value)}
-                                                                className="w-28"
+                                                                className="w-full sm:w-28"
                                                             />
                                                             <span className="text-muted-foreground">até</span>
                                                             <Input
                                                                 type="time"
                                                                 value={entry.hora_fecho}
                                                                 onChange={(e) => handleScheduleChange(entry.dia_semana, 'hora_fecho', e.target.value)}
-                                                                className="w-28"
+                                                                className="w-full sm:w-28"
                                                             />
                                                         </div>
                                                     )}
