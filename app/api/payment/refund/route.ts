@@ -13,6 +13,14 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (!stripe) {
+            return NextResponse.json({
+                success: true,
+                status: 'demo',
+                message: 'Stripe não configurado - modo demo'
+            });
+        }
+
         // Cancel the payment intent (releases the hold without charging)
         const canceledIntent = await stripe.paymentIntents.cancel(paymentIntentId);
 

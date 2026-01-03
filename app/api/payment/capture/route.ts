@@ -13,6 +13,12 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (!stripe) {
+            return NextResponse.json(
+                { success: true, status: 'demo', message: 'Stripe não configurado - modo demo' }
+            );
+        }
+
         // Capture the payment (charge the customer for no-show)
         const capturedIntent = await stripe.paymentIntents.capture(paymentIntentId);
 

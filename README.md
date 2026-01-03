@@ -1,210 +1,195 @@
-# Barber Queue MVP 💈
+# Ventus App 💈
 
-Uma Progressive Web App (PWA) que elimina a espera física em barbearias através de uma fila virtual híbrida.
+Sistema de gestão de filas e marcações para barbearias, com suporte a multi-tenancy.
 
-## 🎯 Objetivo
+![Next.js](https://img.shields.io/badge/Next.js-16-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Supabase](https://img.shields.io/badge/Supabase-Auth%20%2B%20DB-green)
+![Stripe](https://img.shields.io/badge/Stripe-Payments-purple)
 
-Resolver o **"Caos do Sábado de Manhã"** reduzindo walk-outs e no-shows através de:
-- Fila virtual com notificações SMS
-- Tempo de espera estimado em tempo real
-- Hold de segurança de 5€ (depósito reembolsável)
-- Interface premium com dark mode (Preto Mate e Dourado)
+## 🚀 Funcionalidades
 
-## 🚀 Tech Stack
+### Para Clientes (`/b/[slug]`)
+- **Fila Virtual** - Entrar na fila e receber SMS quando for a vez
+- **Reservas Online** - Marcar horário específico
+- **Depósito de Segurança** - Pagamento via Stripe para garantir compromisso
+- **Tracking em Tempo Real** - Ver posição na fila com updates via WebSocket
 
-- **Frontend**: Next.js 14+ (App Router) com TypeScript
-- **UI Components**: Shadcn UI
-- **Styling**: Tailwind CSS
-- **Backend/Auth**: Supabase
-- **Notifications**: Twilio SMS (Placeholder)
-- **Payments**: Stripe/MB WAY (Placeholder)
+### Para Barbeiros (`/barbeiro/[slug]`)
+- **Dashboard** - Vista de fila virtual e calendário de marcações
+- **Gestão de Fila** - Chamar próximo, marcar como em atendimento, concluir
+- **Calendário** - Vista diária, semanal, mensal das marcações
+- **Checkout Completo** - Emitir fatura (Vendus), processar depósito, enviar SMS
 
-## 📦 Instalação
+### Definições (`/barbeiro/[slug]/settings`)
+- **Serviços** - CRUD completo com templates pré-definidos
+- **Horários** - Configuração de horário de funcionamento por dia
 
-1. **Clone o repositório** (ou navegue até a pasta do projeto)
-
-2. **Instale as dependências**:
-   ```bash
-   npm install --cache /tmp/.npm-cache
-   ```
-
-3. **Configure as variáveis de ambiente**:
-   - Copie `env.example` para `.env.local`
-   - Adicione as suas credenciais do Supabase:
-     ```
-     NEXT_PUBLIC_SUPABASE_URL=your-project-url
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-     ```
-
-4. **Configure o Supabase**:
-   - Crie um novo projeto no [Supabase](https://supabase.com)
-   - Execute o SQL em `supabase-schema.sql` no SQL Editor do Supabase
-   - Isto criará as tabelas necessárias e dados de exemplo
-
-5. **Execute o servidor de desenvolvimento**:
-   ```bash
-   npm run dev
-   ```
-
-6. **Abra no navegador**: http://localhost:3000
-
-## 🏗️ Estrutura do Projeto
+## 🏗️ Arquitectura Multi-Tenancy
 
 ```
-barber-queue/
+/b/[slug]                    → Página pública do cliente
+/barbeiro/login              → Login do barbeiro
+/barbeiro/[slug]             → Dashboard do barbeiro (autenticado)
+/barbeiro/[slug]/settings    → Definições da barbearia
+```
+
+Cada barbearia tem um `slug` único (ex: `ventus`) que é usado em todas as URLs.
+
+### Base de Dados
+
+```sql
+barbearias
+├── id (UUID)
+├── nome
+├── slug (UNIQUE)
+└── ...
+
+profiles
+├── id (UUID) → refs auth.users
+├── barbearia_id → refs barbearias
+└── role ('barbeiro' | 'admin')
+
+fila_virtual
+├── id
+├── barbearia_id
+├── cliente_nome
+├── servico_id
+└── status ('espera' | 'chamado' | 'em_atendimento' | 'concluido')
+
+marcacoes
+├── id
+├── barbearia_id
+├── data, hora
+├── servico_id
+└── status
+```
+
+## 🔧 Setup Local
+
+### 1. Clonar e Instalar
+
+```bash
+git clone https://github.com/iamtiagomadeira/ventus.git
+cd ventus-app
+npm install
+```
+
+### 2. Variáveis de Ambiente
+
+Criar ficheiro `.env.local`:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+
+# Stripe (Pagamentos)
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Twilio (SMS)
+TWILIO_ACCOUNT_SID=AC...
+TWILIO_AUTH_TOKEN=...
+TWILIO_PHONE_NUMBER=+351...
+
+# Vendus (Facturação PT)
+VENDUS_API_KEY=...
+```
+
+### 3. Base de Dados
+
+Executar as migrações no Supabase SQL Editor:
+
+```bash
+# Ver ficheiro completo em:
+cat docs/migration-add-slug.sql
+```
+
+### 4. Correr Localmente
+
+```bash
+npm run dev
+```
+
+Aceder a `http://localhost:3000/b/ventus`
+
+## 🌐 Deploy (Vercel)
+
+1. Conectar repositório ao Vercel
+2. Adicionar variáveis de ambiente no dashboard
+3. Deploy automático em cada push ao `main`
+
+**URL de Produção:** `https://ventus-cyan.vercel.app`
+
+## 📁 Estrutura do Projeto
+
+```
+ventus-app/
 ├── app/
 │   ├── api/
-│   │   └── queue/
-│   │       ├── join/route.ts       # API: Entrar na fila
-│   │       ├── call-next/route.ts  # API: Chamar próximo
-│   │       └── complete/route.ts   # API: Completar serviço
-│   ├── barbeiro/
-│   │   ├── components/
-│   │   │   └── QueueList.tsx       # Lista da fila (Kiosk Mode)
-│   │   ├── login/page.tsx          # Login do barbeiro
-│   │   └── page.tsx                # Dashboard do barbeiro
-│   ├── globals.css                 # Estilos globais (Dark Theme)
-│   ├── layout.tsx                  # Layout principal
-│   └── page.tsx                    # Landing page (Cliente)
+│   │   ├── queue/          # APIs de fila (join, complete, leave)
+│   │   ├── bookings/       # APIs de marcações
+│   │   ├── services/       # CRUD de serviços
+│   │   └── schedule/       # Horários de funcionamento
+│   ├── b/[slug]/           # Página pública do cliente
+│   └── barbeiro/
+│       ├── login/          # Autenticação
+│       └── [slug]/         # Dashboard do barbeiro
+│           └── settings/   # Definições
 ├── components/
-│   ├── ui/                         # Componentes Shadcn UI
-│   └── QueueForm.tsx               # Formulário de entrada na fila
+│   ├── ui/                 # shadcn/ui components
+│   ├── QueueForm.tsx       # Formulário de entrada na fila
+│   ├── BookingForm.tsx     # Formulário de marcação
+│   ├── CheckoutModal.tsx   # Modal de checkout
+│   └── ...
+├── hooks/
+│   ├── useRealtimeQueue.ts    # Supabase Realtime para fila
+│   └── useRealtimeBookings.ts # Supabase Realtime para marcações
 ├── lib/
-│   ├── supabase/
-│   │   ├── client.ts               # Cliente Supabase (browser)
-│   │   └── server.ts               # Cliente Supabase (server)
-│   ├── queue-logic.ts              # Lógica da fila
-│   ├── types.ts                    # TypeScript types
-│   └── utils.ts                    # Utilidades
-├── public/
-│   └── manifest.json               # PWA manifest
-├── supabase-schema.sql             # Schema da base de dados
-└── README.md
+│   ├── supabase/           # Cliente Supabase (client + server)
+│   ├── stripe.ts           # Funções Stripe (pagamentos, refunds)
+│   └── queue-logic.ts      # Lógica de cálculo de espera
+└── docs/
+    ├── migration-add-slug.sql  # Migração de BD
+    └── onboarding-guide.md     # Guia para novas barbearias
 ```
 
-## 🎨 Funcionalidades
+## 🔌 Integrações
 
-### Interface do Cliente (PWA)
-- ✅ Landing page minimalista "above the fold"
-- ✅ Formulário de entrada na fila (Nome, Telemóvel, Serviço)
-- ✅ Display de posição em tempo real ("X pessoas à sua frente")
-- ✅ Tempo de espera estimado
-- ⏳ Notificações SMS (Placeholder)
-- ⏳ Hold de segurança de 5€ (Placeholder)
+| Serviço | Uso |
+|---------|-----|
+| **Supabase** | Auth, Database, Realtime |
+| **Stripe** | Depósitos de segurança, Refunds |
+| **Twilio** | Notificações SMS |
+| **Vendus** | Emissão de faturas (PT) |
 
-### Painel do Barbeiro (Kiosk Mode)
-- ✅ Autenticação com Supabase
-- ✅ Vista da fila em tempo real
-- ✅ Botões grandes para "Chamar Próximo" e "Completar"
-- ✅ Interface touch-friendly
-- ✅ Estatísticas da fila (Em Espera, Em Corte)
+## 📝 Onboarding de Nova Barbearia
 
-### Backend & Lógica
-- ✅ Cálculo de tempo de espera baseado na duração média do serviço
-- ✅ Gestão de posições na fila
-- ✅ API routes para operações CRUD
-- ✅ Row Level Security (RLS) no Supabase
+Ver guia completo em [`docs/onboarding-guide.md`](docs/onboarding-guide.md)
 
-## 🗄️ Schema da Base de Dados
+Resumo:
+1. Criar entrada em `barbearias` com slug único
+2. Criar utilizador no Supabase Auth
+3. Criar entrada em `profiles` ligando user à barbearia
+4. Configurar serviços e horários via UI
 
-### Tabelas
+## 🧪 Testing
 
-**barbearias**
-- `id` (UUID, PK)
-- `nome` (TEXT)
-- `endereco` (TEXT)
-- `telefone` (TEXT)
-- `created_at` (TIMESTAMP)
-
-**servicos**
-- `id` (UUID, PK)
-- `barbearia_id` (UUID, FK)
-- `nome` (TEXT) - ex: "Fade", "Corte Clássico"
-- `duracao_media` (INTEGER) - minutos
-- `preco` (DECIMAL)
-- `created_at` (TIMESTAMP)
-
-**fila_virtual**
-- `id` (UUID, PK)
-- `barbearia_id` (UUID, FK)
-- `servico_id` (UUID, FK)
-- `cliente_nome` (TEXT)
-- `cliente_telefone` (TEXT)
-- `status` (ENUM: 'em_espera', 'em_corte', 'concluido', 'no_show')
-- `posicao` (INTEGER)
-- `tempo_espera_estimado` (INTEGER) - minutos
-- `deposito_pago` (BOOLEAN)
-- `deposito_id` (TEXT)
-- `created_at` (TIMESTAMP)
-- `chamado_at` (TIMESTAMP)
-- `concluido_at` (TIMESTAMP)
-
-## 🔐 Autenticação
-
-Atualmente usa autenticação mock. Para implementar autenticação real:
-
-1. Configure o Supabase Auth no dashboard
-2. Atualize `app/barbeiro/login/page.tsx` para usar `supabase.auth.signInWithPassword()`
-3. Adicione middleware para proteger rotas
-
-## 💳 Pagamentos (Placeholder)
-
-O sistema de hold de 5€ está preparado mas não implementado. Para integrar:
-
-1. **Stripe**:
-   - Adicione as chaves da API em `.env.local`
-   - Implemente `lib/stripe.ts`
-   - Crie payment intent em `app/api/payment/create-hold/route.ts`
-
-2. **MB WAY**:
-   - Integre com a API do seu gateway de pagamentos
-   - Implemente fluxo de autorização/captura
-
-## 📱 PWA
-
-Para testar a instalação PWA:
-
-1. Abra a app no Chrome/Edge
-2. Clique no ícone de instalação na barra de endereço
-3. A app será instalada como standalone
-
-**Nota**: Precisa de HTTPS em produção para PWA funcionar completamente.
-
-## 🚧 Próximos Passos
-
-- [ ] Integrar Twilio para notificações SMS
-- [ ] Implementar Stripe/MB WAY para holds de segurança
-- [ ] Adicionar real-time subscriptions do Supabase
-- [ ] Implementar autenticação completa
-- [ ] Adicionar analytics e métricas
-- [ ] Deploy em produção (Vercel + Supabase)
-
-## 📝 Notas de Desenvolvimento
-
-### Problema com npm cache
-Se encontrar erros de permissão com npm cache, use:
 ```bash
-npm install --cache /tmp/.npm-cache
+# Build de produção
+npm run build
+
+# Lint
+npm run lint
 ```
-
-### Mock Data
-A aplicação usa dados mock para demonstração. Para usar dados reais:
-1. Configure o Supabase conforme descrito acima
-2. Atualize os componentes para fazer chamadas API reais
-3. Remova os arrays `MOCK_SERVICES` e `MOCK_QUEUE`
-
-## 🎨 Design
-
-- **Tema**: Dark Mode por defeito
-- **Cores**: Preto Mate (#0a0a0a) e Dourado (#d4af37)
-- **Tipografia**: Inter (Google Fonts)
-- **UI**: Minimalista, focada na redução de fricção
-- **Kiosk Mode**: Botões grandes e alto contraste
 
 ## 📄 Licença
 
-Este é um projeto MVP. Adicione a sua licença conforme necessário.
+Propriedade privada de Ventus / Tiago Madeira.
 
 ---
 
-**Desenvolvido para eliminar o Caos do Sábado de Manhã** 💈✨
+Desenvolvido com ❤️ usando Next.js, Supabase, e muito café ☕

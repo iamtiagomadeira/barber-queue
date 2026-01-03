@@ -20,6 +20,13 @@ export async function POST(request: NextRequest) {
         // Use provided amount or default deposit
         const paymentAmount = amount || 500; // €5.00 default
 
+        if (!stripe) {
+            return NextResponse.json({
+                clientSecret: 'demo_client_secret',
+                paymentIntentId: 'demo_pi_' + Date.now(),
+            });
+        }
+
         // Build description for receipt
         const description = [
             `Ventus - ${service_name}`,
