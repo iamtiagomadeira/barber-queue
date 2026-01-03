@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 
 interface Service {
     id: string;
@@ -51,6 +50,17 @@ interface Barbershop {
 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
+// Default schedule if none exists
+const DEFAULT_SCHEDULE: ScheduleEntry[] = [
+    { dia_semana: 0, hora_abertura: '09:00', hora_fecho: '13:00', fechado: true },
+    { dia_semana: 1, hora_abertura: '09:00', hora_fecho: '19:00', fechado: false },
+    { dia_semana: 2, hora_abertura: '09:00', hora_fecho: '19:00', fechado: false },
+    { dia_semana: 3, hora_abertura: '09:00', hora_fecho: '19:00', fechado: false },
+    { dia_semana: 4, hora_abertura: '09:00', hora_fecho: '19:00', fechado: false },
+    { dia_semana: 5, hora_abertura: '09:00', hora_fecho: '19:00', fechado: false },
+    { dia_semana: 6, hora_abertura: '09:00', hora_fecho: '17:00', fechado: false },
+];
+
 // Service templates for quick setup
 const SERVICE_TEMPLATES = [
     { nome: 'Corte Clássico', duracao_media: 30, precoSugerido: 12 },
@@ -70,12 +80,12 @@ type TabType = 'services' | 'schedule' | 'profile';
 function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [activeTab, setActiveTab] = useState<TabType>('services');
     const [services, setServices] = useState<Service[]>([]);
-    const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+    const [schedule, setSchedule] = useState<ScheduleEntry[]>(DEFAULT_SCHEDULE);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [editingService, setEditingService] = useState<string | null>(null);
     const [newService, setNewService] = useState<Partial<Service> | null>(null);
-    const { toast } = useToast();
+    const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const fetchServices = useCallback(async () => {
         try {
@@ -93,11 +103,15 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
         try {
             const response = await fetch(`/api/schedule?barbearia_id=${barbershop.id}`);
             const result = await response.json();
-            if (result.success) {
-                setSchedule(result.data || []);
+            if (result.success && result.data && result.data.length > 0) {
+                setSchedule(result.data);
+            } else {
+                // Use default schedule if none exists
+                setSchedule(DEFAULT_SCHEDULE);
             }
         } catch (error) {
             console.error('Error fetching schedule:', error);
+            setSchedule(DEFAULT_SCHEDULE);
         }
     }, [barbershop.id]);
 
@@ -188,25 +202,16 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
             });
             const result = await response.json();
             if (result.success) {
-                toast({
-                    title: '✅ Guardado',
-                    description: 'Horário atualizado com sucesso!',
-                    className: 'bg-green-600 text-white border-green-700',
-                });
+                setSaveMessage({ type: 'success', text: 'Horário guardado com sucesso!' });
+                setTimeout(() => setSaveMessage(null), 4000);
             } else {
-                toast({
-                    title: 'Erro',
-                    description: 'Não foi possível guardar o horário.',
-                    variant: 'destructive',
-                });
+                setSaveMessage({ type: 'error', text: 'Não foi possível guardar o horário.' });
+                setTimeout(() => setSaveMessage(null), 4000);
             }
         } catch (error) {
             console.error('Error saving schedule:', error);
-            toast({
-                title: 'Erro',
-                description: 'Erro ao guardar horário.',
-                variant: 'destructive',
-            });
+            setSaveMessage({ type: 'error', text: 'Erro ao guardar horário.' });
+            setTimeout(() => setSaveMessage(null), 4000);
         } finally {
             setIsSaving(false);
         }
@@ -432,6 +437,21 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                             Guardar
                                         </Button>
                                     </div>
+
+                                    {/* Success/Error Banner */}
+                                    {saveMessage && (
+                                        <div className={`flex items-center gap-3 p-4 rounded-lg border ${saveMessage.type === 'success'
+                                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                                : 'bg-red-500/20 border-red-500 text-red-400'
+                                            }`}>
+                                            {saveMessage.type === 'success' ? (
+                                                <Check className="h-5 w-5" />
+                                            ) : (
+                                                <X className="h-5 w-5" />
+                                            )}
+                                            <span className="font-medium">{saveMessage.text}</span>
+                                        </div>
+                                    )}
 
                                     <Card>
                                         <CardContent className="p-4 space-y-4">
