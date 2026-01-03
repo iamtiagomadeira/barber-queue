@@ -66,3 +66,49 @@ ON CONFLICT (id) DO NOTHING;
 -- 11. IMPORTANT: After running this, you need to manually link your user to the barbershop:
 -- Get your user ID from Supabase Auth > Users, then run:
 -- UPDATE profiles SET barbearia_id = '00000000-0000-0000-0000-000000000001' WHERE id = 'YOUR_USER_ID_HERE';
+
+-- 12. Create horario_funcionamento table for schedule
+CREATE TABLE IF NOT EXISTS horario_funcionamento (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    barbearia_id UUID REFERENCES barbearias(id) ON DELETE CASCADE NOT NULL,
+    dia_semana INTEGER NOT NULL CHECK (dia_semana >= 0 AND dia_semana <= 6), -- 0=Dom, 6=Sab
+    hora_abertura TIME DEFAULT '09:00',
+    hora_fecho TIME DEFAULT '19:00',
+    fechado BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(barbearia_id, dia_semana)
+);
+
+-- 13. Create index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_horario_barbearia ON horario_funcionamento(barbearia_id);
+
+-- 14. Enable RLS on horario_funcionamento
+ALTER TABLE horario_funcionamento ENABLE ROW LEVEL SECURITY;
+
+-- 15. Allow all authenticated users to read schedules
+CREATE POLICY IF NOT EXISTS "Anyone can read schedule"
+ON horario_funcionamento FOR SELECT
+TO authenticated
+USING (true);
+
+-- 16. Allow barbers to update their own barbershop schedule
+CREATE POLICY IF NOT EXISTS "Barbers can update own schedule"
+ON horario_funcionamento FOR ALL
+TO authenticated
+USING (
+    barbearia_id IN (
+        SELECT barbearia_id FROM profiles WHERE id = auth.uid()
+    )
+);
+
+-- 17. Insert default schedule for Ventus barbershop
+INSERT INTO horario_funcionamento (barbearia_id, dia_semana, hora_abertura, hora_fecho, fechado) VALUES
+('00000000-0000-0000-0000-000000000001', 0, '09:00', '13:00', true),  -- Domingo fechado
+('00000000-0000-0000-0000-000000000001', 1, '09:00', '19:00', false), -- Segunda
+('00000000-0000-0000-0000-000000000001', 2, '09:00', '19:00', false), -- Terça
+('00000000-0000-0000-0000-000000000001', 3, '09:00', '19:00', false), -- Quarta
+('00000000-0000-0000-0000-000000000001', 4, '09:00', '19:00', false), -- Quinta
+('00000000-0000-0000-0000-000000000001', 5, '09:00', '19:00', false), -- Sexta
+('00000000-0000-0000-0000-000000000001', 6, '09:00', '17:00', false)  -- Sábado
+ON CONFLICT (barbearia_id, dia_semana) DO NOTHING;

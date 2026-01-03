@@ -86,6 +86,14 @@ export default function BookingCard({ booking, onStatusChange }: BookingCardProp
         return time.substring(0, 5); // HH:MM
     };
 
+    const formatPhone = (phone: string) => {
+        const cleaned = phone.replace(/\D/g, '');
+        if (cleaned.startsWith('351') && cleaned.length === 12) {
+            return `+351 ${cleaned.slice(3, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
+        }
+        return phone;
+    };
+
     const getActions = () => {
         switch (booking.status) {
             case 'pendente':
@@ -105,7 +113,7 @@ export default function BookingCard({ booking, onStatusChange }: BookingCardProp
                         size="sm"
                         onClick={() => handleStatusChange('em_atendimento')}
                         disabled={isLoading}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-gold hover:bg-gold/90 text-black"
                     >
                         {isLoading ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -162,13 +170,14 @@ export default function BookingCard({ booking, onStatusChange }: BookingCardProp
                             <span className="text-2xl font-bold text-gold">
                                 {formatTime(booking.hora)}
                             </span>
-                            <Badge className={`${config.color} border`}>
+                            <Badge className={`${config.color} border pointer-events-none cursor-default`}>
                                 <StatusIcon className="mr-1 h-3 w-3" />
                                 {config.label}
                             </Badge>
                             {booking.deposito_pago && (
-                                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30">
-                                    💳 Pago
+                                <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 pointer-events-none cursor-default">
+                                    <CheckCircle className="mr-1 h-3 w-3" />
+                                    Pago
                                 </Badge>
                             )}
                         </div>
@@ -183,10 +192,10 @@ export default function BookingCard({ booking, onStatusChange }: BookingCardProp
                             </span>
                             <a
                                 href={`tel:${booking.cliente_telefone}`}
-                                className="flex items-center gap-1 hover:text-gold"
+                                className="flex items-center gap-1.5 text-gold hover:text-gold/80 font-medium"
                             >
                                 <Phone className="h-4 w-4" />
-                                {booking.cliente_telefone}
+                                {formatPhone(booking.cliente_telefone)}
                             </a>
                         </div>
 
