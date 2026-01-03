@@ -293,41 +293,72 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                             <CardContent className="p-4 space-y-4">
                                                 {/* Template selector */}
                                                 <div>
-                                                    <Label className="mb-2 block">Escolher template</Label>
+                                                    <Label className="mb-2 block text-sm text-muted-foreground">Escolher template</Label>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button
                                                                 variant="outline"
-                                                                className="w-full justify-between text-left font-normal"
+                                                                className="w-full h-12 justify-between text-left font-normal bg-zinc-900/50 border-zinc-700/50 hover:bg-zinc-800/50 hover:border-gold/50 transition-all duration-200"
                                                             >
-                                                                {newService.nome || 'Seleccionar serviço...'}
-                                                                <ChevronDown className="h-4 w-4 opacity-50" />
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+                                                                        <Scissors className="h-4 w-4 text-gold" />
+                                                                    </div>
+                                                                    <span className={newService.nome ? 'text-foreground' : 'text-muted-foreground'}>
+                                                                        {newService.nome || 'Seleccionar serviço...'}
+                                                                    </span>
+                                                                </div>
+                                                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                                             </Button>
                                                         </DropdownMenuTrigger>
-                                                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-[300px] overflow-y-auto">
-                                                            <DropdownMenuLabel>Templates de Serviço</DropdownMenuLabel>
-                                                            <DropdownMenuSeparator />
-                                                            {SERVICE_TEMPLATES.map(t => (
-                                                                <DropdownMenuItem
-                                                                    key={t.nome}
-                                                                    onClick={() => {
-                                                                        setNewService({
-                                                                            nome: t.nome,
-                                                                            duracao_media: t.duracao_media,
-                                                                            preco: t.precoSugerido,
-                                                                            activo: true,
-                                                                        });
-                                                                    }}
-                                                                    className="cursor-pointer"
-                                                                >
-                                                                    <div className="flex flex-col">
-                                                                        <span className="font-medium">{t.nome}</span>
-                                                                        <span className="text-xs text-muted-foreground">
-                                                                            {t.duracao_media}min · €{t.precoSugerido}
-                                                                        </span>
-                                                                    </div>
-                                                                </DropdownMenuItem>
-                                                            ))}
+                                                        <DropdownMenuContent
+                                                            className="w-[--radix-dropdown-menu-trigger-width] p-2 bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 shadow-2xl shadow-black/50"
+                                                            sideOffset={8}
+                                                        >
+                                                            <DropdownMenuLabel className="text-gold font-semibold px-2 py-1.5">
+                                                                Templates de Serviço
+                                                            </DropdownMenuLabel>
+                                                            <DropdownMenuSeparator className="bg-zinc-700/50" />
+                                                            <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
+                                                                {SERVICE_TEMPLATES.map((t, index) => (
+                                                                    <DropdownMenuItem
+                                                                        key={t.nome}
+                                                                        onClick={() => {
+                                                                            setNewService({
+                                                                                nome: t.nome,
+                                                                                duracao_media: t.duracao_media,
+                                                                                preco: t.precoSugerido,
+                                                                                activo: true,
+                                                                            });
+                                                                        }}
+                                                                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gold/10 focus:bg-gold/10 transition-all duration-150 group"
+                                                                    >
+                                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 group-hover:bg-gold/20 transition-colors">
+                                                                            <Scissors className="h-4 w-4 text-muted-foreground group-hover:text-gold transition-colors" />
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="font-medium text-foreground group-hover:text-gold transition-colors">
+                                                                                {t.nome}
+                                                                            </p>
+                                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                                                                    <Clock className="h-3 w-3" />
+                                                                                    {t.duracao_media}min
+                                                                                </span>
+                                                                                <span className="inline-flex items-center gap-1 text-xs font-medium text-gold">
+                                                                                    <Euro className="h-3 w-3" />
+                                                                                    {t.precoSugerido}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                            <div className="h-6 w-6 rounded-full bg-gold/20 flex items-center justify-center">
+                                                                                <Plus className="h-3 w-3 text-gold" />
+                                                                            </div>
+                                                                        </div>
+                                                                    </DropdownMenuItem>
+                                                                ))}
+                                                            </div>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </div>
