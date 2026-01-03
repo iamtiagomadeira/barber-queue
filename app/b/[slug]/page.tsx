@@ -183,7 +183,7 @@ export default function ClientBarbershopPage() {
                                 variant={view === 'queue' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setView('queue')}
-                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90 hover:text-black' : 'hover:bg-gold/20 hover:text-foreground'}
                             >
                                 <Users className="mr-2 h-4 w-4" />
                                 Fila Virtual
@@ -192,7 +192,7 @@ export default function ClientBarbershopPage() {
                                 variant={view === 'booking' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setView('booking')}
-                                className={view === 'booking' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                                className={view === 'booking' ? 'bg-gold text-black hover:bg-gold/90 hover:text-black' : 'hover:bg-gold/20 hover:text-foreground'}
                             >
                                 <CalendarCheck className="mr-2 h-4 w-4" />
                                 Marcar

@@ -40,7 +40,12 @@ const MOCK_SERVICES: Service[] = [
 
 type FormStep = 'form' | 'payment' | 'success';
 
-export default function QueueForm() {
+interface QueueFormProps {
+    barbeariaId?: string;
+    services?: Service[];
+}
+
+export default function QueueForm({ barbeariaId, services: propServices }: QueueFormProps) {
     const [nome, setNome] = useState('');
     const [telefone, setTelefone] = useState('');
     // Portugal only
@@ -53,7 +58,7 @@ export default function QueueForm() {
     const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
     const [queuePosition, setQueuePosition] = useState<number | null>(null);
     const [waitTime, setWaitTime] = useState<number>(0);
-    const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
+    const [services, setServices] = useState<Service[]>(propServices || MOCK_SERVICES);
     const [error, setError] = useState<string | null>(null);
     const [highlightedCardIndex, setHighlightedCardIndex] = useState(0);
     const [queueOpen, setQueueOpen] = useState<boolean | null>(null);
@@ -70,15 +75,29 @@ export default function QueueForm() {
         return () => clearInterval(interval);
     }, [selectedService, services.length]);
 
-    // Fetch services from Supabase on mount
+    // Fetch services from Supabase on mount (only if no services passed as props)
     useEffect(() => {
+        // If services are passed as props and not empty, use them
+        if (propServices && propServices.length > 0) {
+            setServices(propServices);
+            return;
+        }
+
         async function fetchServices() {
             try {
                 const supabase = createClient();
-                const { data, error } = await supabase
+                const query = supabase
                     .from('servicos')
                     .select('id, nome, duracao_media, preco')
+                    .eq('activo', true)
                     .order('preco', { ascending: true });
+
+                // Filter by barbeariaId if provided
+                if (barbeariaId) {
+                    query.eq('barbearia_id', barbeariaId);
+                }
+
+                const { data, error } = await query;
 
                 if (data && data.length > 0) {
                     setServices(data);
@@ -88,13 +107,14 @@ export default function QueueForm() {
             }
         }
         fetchServices();
-    }, []);
+    }, [barbeariaId, propServices]);
 
     // Check if queue is open
     useEffect(() => {
         async function fetchQueueStatus() {
             try {
-                const response = await fetch('/api/barbershop/status?barbearia_id=00000000-0000-0000-0000-000000000001');
+                const bId = barbeariaId || '00000000-0000-0000-0000-000000000001';
+                const response = await fetch(`/api/barbershop/status?barbearia_id=${bId}`);
                 const result = await response.json();
                 if (result.success && result.data) {
                     setQueueOpen(result.data.fila_aberta);
@@ -175,7 +195,7 @@ export default function QueueForm() {
                     cliente_nome: nome,
                     cliente_telefone: fullPhone,
                     servico_id: service?.id,
-                    barbearia_id: '00000000-0000-0000-0000-000000000001', // Default barbershop for MVP
+                    barbearia_id: barbeariaId || '00000000-0000-0000-0000-000000000001',
                     deposito_id: intentId,
                 }),
             });

@@ -46,7 +46,12 @@ const MOCK_SERVICES: Service[] = [
     { id: '4', nome: 'Corte + Barba', duracao_media: 60, preco: 20 },
 ];
 
-export default function BookingForm() {
+interface BookingFormProps {
+    barbeariaId?: string;
+    services?: Service[];
+}
+
+export default function BookingForm({ barbeariaId, services: propServices }: BookingFormProps) {
     const [step, setStep] = useState<BookingStep>('service');
     const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
     const [barbers, setBarbers] = useState<Barber[]>([]);
