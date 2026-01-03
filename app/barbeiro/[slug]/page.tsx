@@ -8,7 +8,7 @@ import QueueList from '@/app/barbeiro/components/QueueList';
 import ManualEntryForm from '@/app/barbeiro/components/ManualEntryForm';
 import { QueueToggle } from '@/app/barbeiro/components/QueueToggle';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { Scissors, LogOut, Settings2, Loader2 } from 'lucide-react';
+import { Scissors, LogOut, Settings2, Loader2, Users, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import BookingsCalendar from '@/app/barbeiro/components/BookingsCalendar';
@@ -97,17 +97,19 @@ function BarberDashboardContent({ barbershop }: { barbershop: Barbershop }) {
                                 variant={view === 'queue' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setView('queue')}
-                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                                className={view === 'queue' ? 'bg-gold text-black hover:bg-gold/90 hover:text-black' : 'hover:bg-gold/20 hover:text-foreground'}
                             >
+                                <Users className="mr-2 h-4 w-4" />
                                 Fila Virtual
                             </Button>
                             <Button
                                 variant={view === 'calendar' ? 'default' : 'ghost'}
                                 size="sm"
                                 onClick={() => setView('calendar')}
-                                className={view === 'calendar' ? 'bg-gold text-black hover:bg-gold/90' : 'hover:text-gold'}
+                                className={view === 'calendar' ? 'bg-gold text-black hover:bg-gold/90 hover:text-black' : 'hover:bg-gold/20 hover:text-foreground'}
                             >
-                                Marcações
+                                <Calendar className="mr-2 h-4 w-4" />
+                                Calendário
                             </Button>
                         </div>
                     </div>

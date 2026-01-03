@@ -15,6 +15,7 @@ import {
     AlignJustify
 } from 'lucide-react';
 import BookingCard, { Booking } from './BookingCard';
+import BookingDetailsModal from './BookingDetailsModal';
 import { cn } from '@/lib/utils';
 import {
     format,
@@ -50,6 +51,7 @@ export default function BookingsCalendar({ barbearia_id = '00000000-0000-0000-00
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<ViewMode>('day');
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
 
     // Update current time every minute
     useEffect(() => {
@@ -208,8 +210,9 @@ export default function BookingsCalendar({ barbearia_id = '00000000-0000-0000-00
                         return (
                             <div
                                 key={booking.id}
+                                onClick={() => setSelectedBooking(booking)}
                                 className={cn(
-                                    "absolute left-16 right-2 rounded-md p-2 text-sm overflow-hidden transition-all hover:brightness-95 cursor-pointer z-20 shadow-sm",
+                                    "absolute left-16 right-2 rounded-md p-2 text-sm overflow-hidden transition-all hover:brightness-95 cursor-pointer z-20 shadow-sm hover:ring-2 hover:ring-gold/50",
                                     getBookingStatusColor(booking.status)
                                 )}
                                 style={style}
@@ -293,8 +296,9 @@ export default function BookingsCalendar({ barbearia_id = '00000000-0000-0000-00
                                         return (
                                             <div
                                                 key={booking.id}
+                                                onClick={() => setSelectedBooking(booking)}
                                                 className={cn(
-                                                    "absolute left-1 right-1 rounded-md p-1 text-xs overflow-hidden transition-all hover:brightness-95 cursor-pointer z-10 shadow-sm border border-black/5",
+                                                    "absolute left-1 right-1 rounded-md p-1 text-xs overflow-hidden transition-all hover:brightness-95 cursor-pointer z-10 shadow-sm border border-black/5 hover:ring-2 hover:ring-gold/50",
                                                     getBookingStatusColor(booking.status)
                                                 )}
                                                 style={style}
@@ -507,6 +511,18 @@ export default function BookingsCalendar({ barbearia_id = '00000000-0000-0000-00
                     )}
                 </>
             )}
+
+            {/* Booking Details Modal */}
+            <BookingDetailsModal
+                booking={selectedBooking}
+                isOpen={!!selectedBooking}
+                onClose={() => setSelectedBooking(null)}
+                onStatusChange={async (id, status) => {
+                    await handleStatusChange(id, status);
+                    // Update the selected booking in the modal
+                    setSelectedBooking(prev => prev ? { ...prev, status } : null);
+                }}
+            />
         </div>
     );
 }
