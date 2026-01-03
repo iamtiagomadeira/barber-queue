@@ -201,17 +201,19 @@ export default function ClientBarbershopPage() {
                     </div>
 
                     {/* Forms */}
-                    {view === 'queue' ? (
-                        <QueueForm
-                            barbeariaId={barbershop.id}
-                            services={services}
-                        />
-                    ) : (
-                        <BookingForm
-                            barbeariaId={barbershop.id}
-                            services={services}
-                        />
-                    )}
+                    <div className="flex justify-center">
+                        {view === 'queue' ? (
+                            <QueueForm
+                                barbeariaId={barbershop.id}
+                                services={services}
+                            />
+                        ) : (
+                            <BookingForm
+                                barbeariaId={barbershop.id}
+                                services={services}
+                            />
+                        )}
+                    </div>
 
                     {/* Contact */}
                     {barbershop.telefone && (
