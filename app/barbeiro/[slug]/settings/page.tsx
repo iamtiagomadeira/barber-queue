@@ -25,6 +25,15 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
 
 interface Service {
     id: string;
@@ -284,29 +293,43 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                             <CardContent className="p-4 space-y-4">
                                                 {/* Template selector */}
                                                 <div>
-                                                    <Label>Escolher template</Label>
-                                                    <select
-                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                                        value=""
-                                                        onChange={(e) => {
-                                                            const template = SERVICE_TEMPLATES.find(t => t.nome === e.target.value);
-                                                            if (template) {
-                                                                setNewService({
-                                                                    nome: template.nome,
-                                                                    duracao_media: template.duracao_media,
-                                                                    preco: template.precoSugerido,
-                                                                    activo: true,
-                                                                });
-                                                            }
-                                                        }}
-                                                    >
-                                                        <option value="">Seleccionar serviço...</option>
-                                                        {SERVICE_TEMPLATES.map(t => (
-                                                            <option key={t.nome} value={t.nome}>
-                                                                {t.nome} ({t.duracao_media}min - €{t.precoSugerido} sugerido)
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                    <Label className="mb-2 block">Escolher template</Label>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                className="w-full justify-between text-left font-normal"
+                                                            >
+                                                                {newService.nome || 'Seleccionar serviço...'}
+                                                                <ChevronDown className="h-4 w-4 opacity-50" />
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width] max-h-[300px] overflow-y-auto">
+                                                            <DropdownMenuLabel>Templates de Serviço</DropdownMenuLabel>
+                                                            <DropdownMenuSeparator />
+                                                            {SERVICE_TEMPLATES.map(t => (
+                                                                <DropdownMenuItem
+                                                                    key={t.nome}
+                                                                    onClick={() => {
+                                                                        setNewService({
+                                                                            nome: t.nome,
+                                                                            duracao_media: t.duracao_media,
+                                                                            preco: t.precoSugerido,
+                                                                            activo: true,
+                                                                        });
+                                                                    }}
+                                                                    className="cursor-pointer"
+                                                                >
+                                                                    <div className="flex flex-col">
+                                                                        <span className="font-medium">{t.nome}</span>
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {t.duracao_media}min · €{t.precoSugerido}
+                                                                        </span>
+                                                                    </div>
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 </div>
 
                                                 {/* Manual fields */}
@@ -441,8 +464,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                     {/* Success/Error Banner */}
                                     {saveMessage && (
                                         <div className={`flex items-center gap-3 p-4 rounded-lg border ${saveMessage.type === 'success'
-                                                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
-                                                : 'bg-red-500/20 border-red-500 text-red-400'
+                                            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400'
+                                            : 'bg-red-500/20 border-red-500 text-red-400'
                                             }`}>
                                             {saveMessage.type === 'success' ? (
                                                 <Check className="h-5 w-5" />
