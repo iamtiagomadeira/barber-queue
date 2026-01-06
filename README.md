@@ -81,9 +81,8 @@ Criar ficheiro `.env.local`:
 
 ```env
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # Stripe (Pagamentos)
 STRIPE_SECRET_KEY=sk_test_...
