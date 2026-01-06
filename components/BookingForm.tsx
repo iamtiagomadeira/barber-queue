@@ -357,27 +357,40 @@ export default function BookingForm({ barbeariaId, services: propServices }: Boo
                 {/* Step 1: Service Selection */}
                 {step === 'service' && (
                     <div className="grid gap-3">
-                        {services.map((service) => (
-                            <button
-                                key={service.id}
-                                onClick={() => setSelectedService(service.id)}
-                                className={`flex items-center justify-between rounded-lg border p-4 transition-all ${selectedService === service.id
-                                    ? 'border-gold bg-gold/10 ring-2 ring-gold'
-                                    : 'border-border/50 hover:border-gold/50'
-                                    }`}
-                            >
-                                <div className="text-left">
-                                    <div className="font-medium">{service.nome}</div>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <Clock className="h-3 w-3" />
-                                        {service.duracao_media}min
-                                    </div>
+                        {services.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/10 mb-4">
+                                    <Scissors className="h-8 w-8 text-gold/60" />
                                 </div>
-                                <Badge variant="secondary" className="bg-gold/10 text-gold">
-                                    €{service.preco}
-                                </Badge>
-                            </button>
-                        ))}
+                                <h3 className="font-semibold text-lg mb-2">Serviços Indisponíveis</h3>
+                                <p className="text-sm text-muted-foreground max-w-xs">
+                                    Esta barbearia ainda não configurou os serviços disponíveis.
+                                    Por favor, tente novamente mais tarde.
+                                </p>
+                            </div>
+                        ) : (
+                            services.map((service) => (
+                                <button
+                                    key={service.id}
+                                    onClick={() => setSelectedService(service.id)}
+                                    className={`flex items-center justify-between rounded-lg border p-4 transition-all ${selectedService === service.id
+                                        ? 'border-gold bg-gold/10 ring-2 ring-gold'
+                                        : 'border-border/50 hover:border-gold/50'
+                                        }`}
+                                >
+                                    <div className="text-left">
+                                        <div className="font-medium">{service.nome}</div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Clock className="h-3 w-3" />
+                                            {service.duracao_media}min
+                                        </div>
+                                    </div>
+                                    <Badge variant="secondary" className="bg-gold/10 text-gold">
+                                        €{service.preco}
+                                    </Badge>
+                                </button>
+                            ))
+                        )}
                     </div>
                 )}
 
