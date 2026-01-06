@@ -30,6 +30,9 @@ import {
     Mail,
     Phone,
     Camera,
+    LayoutGrid,
+    List,
+    Upload,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -119,6 +122,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [newBarber, setNewBarber] = useState<Partial<Barber> | null>(null);
     const [editingBarber, setEditingBarber] = useState<string | null>(null);
+    const [barberViewMode, setBarberViewMode] = useState<'list' | 'gallery'>('list');
 
     const fetchServices = useCallback(async () => {
         try {
@@ -750,7 +754,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}\n                                        </CardContent>
+                                            ))}
+                                        </CardContent>
                                     </Card>
                                 </div>
                             )}
@@ -758,7 +763,32 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                             {activeTab === 'barbers' && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <h2 className="text-lg font-semibold">Equipa</h2>
+                                        <div className="flex items-center gap-3">
+                                            <h2 className="text-lg font-semibold">Equipa</h2>
+                                            {/* View Mode Toggle */}
+                                            <div className="flex items-center gap-1 bg-zinc-800/50 rounded-lg p-1">
+                                                <button
+                                                    onClick={() => setBarberViewMode('list')}
+                                                    className={`p-1.5 rounded-md transition-colors ${barberViewMode === 'list'
+                                                        ? 'bg-gold/20 text-gold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    title="Vista em Lista"
+                                                >
+                                                    <List className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setBarberViewMode('gallery')}
+                                                    className={`p-1.5 rounded-md transition-colors ${barberViewMode === 'gallery'
+                                                        ? 'bg-gold/20 text-gold'
+                                                        : 'text-muted-foreground hover:text-foreground'
+                                                        }`}
+                                                    title="Vista em Galeria"
+                                                >
+                                                    <LayoutGrid className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        </div>
                                         <Button
                                             onClick={() => setNewBarber({ nome: '', email: '', telefone: '', bio: '', especialidades: [], activo: true })}
                                             disabled={!!newBarber}
@@ -779,6 +809,45 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                 </CardTitle>
                                             </CardHeader>
                                             <CardContent className="space-y-4">
+                                                {/* Photo Upload */}
+                                                <div className="flex items-start gap-4">
+                                                    <div className="flex flex-col items-center gap-2">
+                                                        <div className="relative">
+                                                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
+                                                                {newBarber.foto_url ? (
+                                                                    <img
+                                                                        src={newBarber.foto_url}
+                                                                        alt="Preview"
+                                                                        className="h-20 w-20 object-cover"
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.style.display = 'none';
+                                                                        }}
+                                                                    />
+                                                                ) : (
+                                                                    <Camera className="h-8 w-8 text-gold/50" />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground">Foto de Perfil</span>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">URL da Foto</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                                <Upload className="h-4 w-4 text-muted-foreground" />
+                                                            </div>
+                                                            <Input
+                                                                type="url"
+                                                                value={newBarber.foto_url || ''}
+                                                                onChange={(e) => setNewBarber(prev => ({ ...prev!, foto_url: e.target.value }))}
+                                                                placeholder="https://exemplo.com/foto.jpg"
+                                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
+                                                            />
+                                                        </div>
+                                                        <p className="text-xs text-muted-foreground mt-1">Cole o URL de uma imagem ou foto</p>
+                                                    </div>
+                                                </div>
+
                                                 <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
                                                     <div>
                                                         <Label className="mb-2 block text-sm text-muted-foreground">Nome *</Label>
@@ -861,7 +930,10 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                     )}
 
                                     {/* Barbers List */}
-                                    <div className="space-y-3">
+                                    <div className={barberViewMode === 'gallery'
+                                        ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4'
+                                        : 'space-y-3'
+                                    }>
                                         {barbers.length === 0 && !newBarber ? (
                                             <Card className="border-dashed border-2 border-zinc-700">
                                                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -939,12 +1011,42 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                                     </div>
                                                                 </div>
                                                             </div>
+                                                        ) : barberViewMode === 'gallery' ? (
+                                                            /* Gallery View Mode */
+                                                            <div className="flex flex-col items-center text-center">
+                                                                <div className="relative group mb-3">
+                                                                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
+                                                                        {barber.foto_url ? (
+                                                                            <img src={barber.foto_url} alt={barber.nome} className="h-24 w-24 object-cover" />
+                                                                        ) : (
+                                                                            <User className="h-10 w-10 text-gold" />
+                                                                        )}
+                                                                    </div>
+                                                                    {!barber.activo && (
+                                                                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                                                            <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <h3 className="font-semibold text-sm">{barber.nome}</h3>
+                                                                {barber.bio && (
+                                                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{barber.bio}</p>
+                                                                )}
+                                                                <div className="flex gap-1 mt-3">
+                                                                    <Button size="sm" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
+                                                                        <PenLine className="h-3 w-3" />
+                                                                    </Button>
+                                                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteBarber(barber.id)}>
+                                                                        <Trash2 className="h-3 w-3" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
                                                         ) : (
-                                                            /* View Mode */
+                                                            /* List View Mode */
                                                             <div className="flex items-center gap-4">
-                                                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold/10">
+                                                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold/10 overflow-hidden">
                                                                     {barber.foto_url ? (
-                                                                        <img src={barber.foto_url} alt={barber.nome} className="h-14 w-14 rounded-full object-cover" />
+                                                                        <img src={barber.foto_url} alt={barber.nome} className="h-14 w-14 object-cover" />
                                                                     ) : (
                                                                         <User className="h-6 w-6 text-gold" />
                                                                     )}
