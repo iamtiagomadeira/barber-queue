@@ -302,8 +302,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                         setNewService({ nome: '', duracao_media: 30, preco: 0, activo: true });
                                                     }}
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all ${creationMode === 'template'
-                                                            ? 'bg-gold/10 text-gold border-b-2 border-gold'
-                                                            : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
+                                                        ? 'bg-gold/10 text-gold border-b-2 border-gold'
+                                                        : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
                                                         }`}
                                                 >
                                                     <Sparkles className="h-4 w-4" />
@@ -315,8 +315,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                         setNewService({ nome: '', duracao_media: 30, preco: 0, activo: true });
                                                     }}
                                                     className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all ${creationMode === 'custom'
-                                                            ? 'bg-gold/10 text-gold border-b-2 border-gold'
-                                                            : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
+                                                        ? 'bg-gold/10 text-gold border-b-2 border-gold'
+                                                        : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
                                                         }`}
                                                 >
                                                     <PenLine className="h-4 w-4" />
@@ -458,42 +458,22 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                     {/* Price Input */}
                                                     <div>
                                                         <Label className="mb-2 block text-sm text-muted-foreground">Preço</Label>
-                                                        <div className="flex items-center gap-2 p-2 bg-zinc-900/50 border border-zinc-700/50 rounded-lg h-12">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setNewService(prev => ({
-                                                                    ...prev!,
-                                                                    preco: Math.max(0, (prev?.preco || 0) - 1)
-                                                                }))}
-                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
-                                                            >
-                                                                <Minus className="h-4 w-4" />
-                                                            </button>
-                                                            <div className="flex-1 text-center">
-                                                                <div className="flex items-center justify-center gap-1">
-                                                                    <Euro className="h-4 w-4 text-gold" />
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.5"
-                                                                        value={newService.preco || 0}
-                                                                        onChange={(e) => setNewService(prev => ({
-                                                                            ...prev!,
-                                                                            preco: parseFloat(e.target.value) || 0
-                                                                        }))}
-                                                                        className="w-16 bg-transparent text-center text-lg font-semibold text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                                                    />
-                                                                </div>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+                                                                <Euro className="h-4 w-4 text-gold" />
                                                             </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setNewService(prev => ({
+                                                            <input
+                                                                type="number"
+                                                                step="0.01"
+                                                                min="0"
+                                                                value={newService.preco || ''}
+                                                                onChange={(e) => setNewService(prev => ({
                                                                     ...prev!,
-                                                                    preco: (prev?.preco || 0) + 1
+                                                                    preco: parseFloat(e.target.value) || 0
                                                                 }))}
-                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
-                                                            >
-                                                                <Plus className="h-4 w-4" />
-                                                            </button>
+                                                                placeholder="0.00"
+                                                                className="w-full h-12 pl-14 pr-4 bg-zinc-900/50 border border-zinc-700/50 rounded-lg text-lg font-semibold text-foreground focus:outline-none focus:border-gold/50 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                            />
                                                         </div>
                                                     </div>
                                                 </div>
