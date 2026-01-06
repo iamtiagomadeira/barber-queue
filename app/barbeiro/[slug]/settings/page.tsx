@@ -64,6 +64,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { ChevronDown } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Service {
     id: string;
@@ -145,6 +146,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [isUploading, setIsUploading] = useState(false);
     const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
     const [barberSearch, setBarberSearch] = useState('');
+    const { toast } = useToast();
 
     const fetchServices = useCallback(async () => {
         try {
@@ -212,9 +214,18 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
             if (result.success) {
                 setServices(prev => [...prev, result.data]);
                 setNewService(null);
+                toast({
+                    title: "Serviço criado",
+                    description: "O serviço foi adicionado com sucesso à lista.",
+                });
             }
         } catch (error) {
             console.error('Error creating service:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro ao criar serviço",
+                description: "Não foi possível criar o serviço. Tenta novamente.",
+            });
         } finally {
             setIsSaving(false);
         }
@@ -1037,7 +1048,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                         : 'space-y-3'
                                     }>
                                         {barbers.length === 0 && !newBarber ? (
-                                            <Card className="border-dashed border-2 border-zinc-700">
+                                            <Card className="border-dashed border-2 border-zinc-700 col-span-full">
                                                 <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                                                     <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/10 mb-4">
                                                         <Users className="h-8 w-8 text-gold" />
