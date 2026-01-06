@@ -28,8 +28,8 @@ const footerLinks: FooterSection[] = [
 		label: 'Empresa',
 		links: [
 			{ title: 'Sobre Nós', href: '/about' },
-			{ title: 'Privacidade', href: '/privacy' },
-			{ title: 'Termos de Uso', href: '/terms' },
+			{ title: 'Política de Privacidade', href: '/legal/privacy' },
+			{ title: 'Termos e Condições', href: '/legal/terms' },
 		],
 	},
 	{

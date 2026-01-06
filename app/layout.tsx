@@ -13,9 +13,44 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Ventus - Elimine a Espera",
-  description: "Fila virtual para barbearias. Entre na fila remotamente e elimine a espera física.",
+  title: "Ventus - Gestão Inteligente para Barbearias",
+  description: "Fila virtual, marcações online e pagamentos seguros. Tudo numa única plataforma pensada para barbearias.",
   manifest: "/manifest.json",
+  keywords: ["barbearia", "fila virtual", "marcações online", "gestão barbearia", "barbershop", "Portugal"],
+  authors: [{ name: "Ventus" }],
+  creator: "Ventus",
+  publisher: "Ventus",
+  metadataBase: new URL("https://ventus.app"),
+  openGraph: {
+    type: "website",
+    locale: "pt_PT",
+    url: "https://ventus.app",
+    siteName: "Ventus",
+    title: "Ventus - Gestão Inteligente para Barbearias",
+    description: "Fila virtual, marcações online e pagamentos seguros. Tudo numa única plataforma pensada para barbearias.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Ventus - Gestão Inteligente para Barbearias",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ventus - Gestão Inteligente para Barbearias",
+    description: "Fila virtual, marcações online e pagamentos seguros. A plataforma completa para barbearias.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

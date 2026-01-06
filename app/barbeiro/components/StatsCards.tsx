@@ -11,31 +11,43 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ waitingCount, inServiceCount, completedToday, avgWaitTime }: StatsCardsProps) {
+    // Safely format values - handle NaN, undefined, null
+    const safeValue = (val: number | string | undefined | null): string | number => {
+        if (val === undefined || val === null) return 0;
+        if (typeof val === 'number' && (isNaN(val) || !isFinite(val))) return 0;
+        return val;
+    };
+
+    const formatWaitTime = (minutes: number): string => {
+        if (isNaN(minutes) || !isFinite(minutes) || minutes <= 0) return '--';
+        return `${Math.round(minutes)}min`;
+    };
+
     const stats = [
         {
             label: 'Na Fila',
-            value: waitingCount,
+            value: safeValue(waitingCount),
             icon: Users,
             color: 'text-gold',
             bgColor: 'bg-gold/10',
         },
         {
             label: 'A Cortar',
-            value: inServiceCount,
+            value: safeValue(inServiceCount),
             icon: UserCheck,
             color: 'text-green-500',
             bgColor: 'bg-green-500/10',
         },
         {
             label: 'Finalizados',
-            value: completedToday,
+            value: safeValue(completedToday),
             icon: CheckCircle2,
             color: 'text-blue-500',
             bgColor: 'bg-blue-500/10',
         },
         {
             label: 'Espera Média',
-            value: `${avgWaitTime}min`,
+            value: formatWaitTime(avgWaitTime),
             icon: Clock,
             color: 'text-purple-500',
             bgColor: 'bg-purple-500/10',
@@ -62,3 +74,4 @@ export function StatsCards({ waitingCount, inServiceCount, completedToday, avgWa
         </div>
     );
 }
+
