@@ -13,6 +13,7 @@ import {
     Scissors,
     ArrowLeft,
     Plus,
+    Minus,
     Trash2,
     Save,
     Clock,
@@ -22,6 +23,8 @@ import {
     Loader2,
     Check,
     X,
+    Sparkles,
+    PenLine,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -94,6 +97,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [isSaving, setIsSaving] = useState(false);
     const [editingService, setEditingService] = useState<string | null>(null);
     const [newService, setNewService] = useState<Partial<Service> | null>(null);
+    const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const fetchServices = useCallback(async () => {
@@ -289,116 +293,230 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                     </div>
 
                                     {newService && (
-                                        <Card className="border-gold/50 bg-gold/5">
-                                            <CardContent className="p-4 space-y-4">
-                                                {/* Template selector */}
-                                                <div>
-                                                    <Label className="mb-2 block text-sm text-muted-foreground">Escolher template</Label>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button
-                                                                variant="outline"
-                                                                className="w-full h-12 justify-between text-left font-normal bg-zinc-900/50 border-zinc-700/50 hover:bg-zinc-800/50 hover:border-gold/50 transition-all duration-200"
-                                                            >
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
-                                                                        <Scissors className="h-4 w-4 text-gold" />
+                                        <Card className="border-gold/30 bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                                            {/* Mode Toggle */}
+                                            <div className="flex border-b border-zinc-800">
+                                                <button
+                                                    onClick={() => {
+                                                        setCreationMode('template');
+                                                        setNewService({ nome: '', duracao_media: 30, preco: 0, activo: true });
+                                                    }}
+                                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all ${creationMode === 'template'
+                                                            ? 'bg-gold/10 text-gold border-b-2 border-gold'
+                                                            : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
+                                                        }`}
+                                                >
+                                                    <Sparkles className="h-4 w-4" />
+                                                    Template
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setCreationMode('custom');
+                                                        setNewService({ nome: '', duracao_media: 30, preco: 0, activo: true });
+                                                    }}
+                                                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium transition-all ${creationMode === 'custom'
+                                                            ? 'bg-gold/10 text-gold border-b-2 border-gold'
+                                                            : 'text-muted-foreground hover:text-foreground hover:bg-zinc-800/50'
+                                                        }`}
+                                                >
+                                                    <PenLine className="h-4 w-4" />
+                                                    Personalizado
+                                                </button>
+                                            </div>
+
+                                            <CardContent className="p-5 space-y-5">
+                                                {creationMode === 'template' ? (
+                                                    /* Template Mode */
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Escolher template</Label>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="outline"
+                                                                    className="w-full h-12 justify-between text-left font-normal bg-zinc-900/50 border-zinc-700/50 hover:bg-zinc-800/50 hover:border-gold/50 transition-all duration-200"
+                                                                >
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+                                                                            <Scissors className="h-4 w-4 text-gold" />
+                                                                        </div>
+                                                                        <span className={newService.nome ? 'text-foreground' : 'text-muted-foreground'}>
+                                                                            {newService.nome || 'Seleccionar serviço...'}
+                                                                        </span>
                                                                     </div>
-                                                                    <span className={newService.nome ? 'text-foreground' : 'text-muted-foreground'}>
-                                                                        {newService.nome || 'Seleccionar serviço...'}
-                                                                    </span>
+                                                                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent
+                                                                className="w-[--radix-dropdown-menu-trigger-width] p-2 bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 shadow-2xl shadow-black/50"
+                                                                sideOffset={8}
+                                                            >
+                                                                <DropdownMenuLabel className="text-gold font-semibold px-2 py-1.5">
+                                                                    Templates de Serviço
+                                                                </DropdownMenuLabel>
+                                                                <DropdownMenuSeparator className="bg-zinc-700/50" />
+                                                                <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
+                                                                    {SERVICE_TEMPLATES.map((t) => (
+                                                                        <DropdownMenuItem
+                                                                            key={t.nome}
+                                                                            onClick={() => {
+                                                                                setNewService({
+                                                                                    nome: t.nome,
+                                                                                    duracao_media: t.duracao_media,
+                                                                                    preco: t.precoSugerido,
+                                                                                    activo: true,
+                                                                                });
+                                                                            }}
+                                                                            className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gold/10 focus:bg-gold/10 transition-all duration-150 group"
+                                                                        >
+                                                                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 group-hover:bg-gold/20 transition-colors">
+                                                                                <Scissors className="h-4 w-4 text-muted-foreground group-hover:text-gold transition-colors" />
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <p className="font-medium text-foreground group-hover:text-gold transition-colors">
+                                                                                    {t.nome}
+                                                                                </p>
+                                                                                <div className="flex items-center gap-2 mt-0.5">
+                                                                                    <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                                                                        <Clock className="h-3 w-3" />
+                                                                                        {t.duracao_media}min
+                                                                                    </span>
+                                                                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-gold">
+                                                                                        <Euro className="h-3 w-3" />
+                                                                                        {t.precoSugerido}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                <div className="h-6 w-6 rounded-full bg-gold/20 flex items-center justify-center">
+                                                                                    <Plus className="h-3 w-3 text-gold" />
+                                                                                </div>
+                                                                            </div>
+                                                                        </DropdownMenuItem>
+                                                                    ))}
                                                                 </div>
-                                                                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent
-                                                            className="w-[--radix-dropdown-menu-trigger-width] p-2 bg-zinc-900/95 backdrop-blur-xl border-zinc-700/50 shadow-2xl shadow-black/50"
-                                                            sideOffset={8}
-                                                        >
-                                                            <DropdownMenuLabel className="text-gold font-semibold px-2 py-1.5">
-                                                                Templates de Serviço
-                                                            </DropdownMenuLabel>
-                                                            <DropdownMenuSeparator className="bg-zinc-700/50" />
-                                                            <div className="max-h-[280px] overflow-y-auto space-y-1 pr-1">
-                                                                {SERVICE_TEMPLATES.map((t, index) => (
-                                                                    <DropdownMenuItem
-                                                                        key={t.nome}
-                                                                        onClick={() => {
-                                                                            setNewService({
-                                                                                nome: t.nome,
-                                                                                duracao_media: t.duracao_media,
-                                                                                preco: t.precoSugerido,
-                                                                                activo: true,
-                                                                            });
-                                                                        }}
-                                                                        className="flex items-center gap-3 p-3 rounded-lg cursor-pointer hover:bg-gold/10 focus:bg-gold/10 transition-all duration-150 group"
-                                                                    >
-                                                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-800 group-hover:bg-gold/20 transition-colors">
-                                                                            <Scissors className="h-4 w-4 text-muted-foreground group-hover:text-gold transition-colors" />
-                                                                        </div>
-                                                                        <div className="flex-1 min-w-0">
-                                                                            <p className="font-medium text-foreground group-hover:text-gold transition-colors">
-                                                                                {t.nome}
-                                                                            </p>
-                                                                            <div className="flex items-center gap-2 mt-0.5">
-                                                                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                                                                    <Clock className="h-3 w-3" />
-                                                                                    {t.duracao_media}min
-                                                                                </span>
-                                                                                <span className="inline-flex items-center gap-1 text-xs font-medium text-gold">
-                                                                                    <Euro className="h-3 w-3" />
-                                                                                    {t.precoSugerido}
-                                                                                </span>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                            <div className="h-6 w-6 rounded-full bg-gold/20 flex items-center justify-center">
-                                                                                <Plus className="h-3 w-3 text-gold" />
-                                                                            </div>
-                                                                        </div>
-                                                                    </DropdownMenuItem>
-                                                                ))}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </div>
+                                                ) : (
+                                                    /* Custom Mode - Name Input */
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Nome do Serviço</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold/10">
+                                                                    <PenLine className="h-4 w-4 text-gold" />
+                                                                </div>
                                                             </div>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
+                                                            <Input
+                                                                value={newService.nome || ''}
+                                                                onChange={(e) => setNewService(prev => ({ ...prev!, nome: e.target.value }))}
+                                                                placeholder="Ex: Corte Especial"
+                                                                className="h-12 pl-14 bg-zinc-900/50 border-zinc-700/50 focus:border-gold/50"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Duration & Price - Premium Stepper Inputs */}
+                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                                    {/* Duration Stepper */}
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Duração</Label>
+                                                        <div className="flex items-center gap-2 p-2 bg-zinc-900/50 border border-zinc-700/50 rounded-lg h-12">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewService(prev => ({
+                                                                    ...prev!,
+                                                                    duracao_media: Math.max(5, (prev?.duracao_media || 30) - 5)
+                                                                }))}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </button>
+                                                            <div className="flex-1 text-center">
+                                                                <div className="flex items-center justify-center gap-1.5">
+                                                                    <Clock className="h-4 w-4 text-gold" />
+                                                                    <span className="text-lg font-semibold text-foreground">
+                                                                        {newService.duracao_media || 30}
+                                                                    </span>
+                                                                    <span className="text-sm text-muted-foreground">min</span>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewService(prev => ({
+                                                                    ...prev!,
+                                                                    duracao_media: Math.min(180, (prev?.duracao_media || 30) + 5)
+                                                                }))}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Price Input */}
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Preço</Label>
+                                                        <div className="flex items-center gap-2 p-2 bg-zinc-900/50 border border-zinc-700/50 rounded-lg h-12">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewService(prev => ({
+                                                                    ...prev!,
+                                                                    preco: Math.max(0, (prev?.preco || 0) - 1)
+                                                                }))}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
+                                                            >
+                                                                <Minus className="h-4 w-4" />
+                                                            </button>
+                                                            <div className="flex-1 text-center">
+                                                                <div className="flex items-center justify-center gap-1">
+                                                                    <Euro className="h-4 w-4 text-gold" />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.5"
+                                                                        value={newService.preco || 0}
+                                                                        onChange={(e) => setNewService(prev => ({
+                                                                            ...prev!,
+                                                                            preco: parseFloat(e.target.value) || 0
+                                                                        }))}
+                                                                        className="w-16 bg-transparent text-center text-lg font-semibold text-foreground focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setNewService(prev => ({
+                                                                    ...prev!,
+                                                                    preco: (prev?.preco || 0) + 1
+                                                                }))}
+                                                                className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-800 hover:bg-gold/20 text-muted-foreground hover:text-gold transition-colors"
+                                                            >
+                                                                <Plus className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
-                                                {/* Manual fields */}
-                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
-                                                    <div>
-                                                        <Label>Nome</Label>
-                                                        <Input
-                                                            value={newService.nome || ''}
-                                                            onChange={(e) => setNewService(prev => ({ ...prev!, nome: e.target.value }))}
-                                                            placeholder="Ex: Corte Fade"
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label>Duração (min)</Label>
-                                                        <Input
-                                                            type="number"
-                                                            value={newService.duracao_media || ''}
-                                                            onChange={(e) => setNewService(prev => ({ ...prev!, duracao_media: parseInt(e.target.value) || 0 }))}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label>Preço (€)</Label>
-                                                        <Input
-                                                            type="number"
-                                                            step="0.01"
-                                                            value={newService.preco || ''}
-                                                            onChange={(e) => setNewService(prev => ({ ...prev!, preco: parseFloat(e.target.value) || 0 }))}
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                {/* Actions - full width on mobile */}
-                                                <div className="flex gap-2 pt-2">
-                                                    <Button onClick={handleCreateService} disabled={isSaving} className="flex-1 sm:flex-none">
-                                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                                                        Adicionar
+                                                {/* Actions */}
+                                                <div className="flex gap-3 pt-2">
+                                                    <Button
+                                                        onClick={handleCreateService}
+                                                        disabled={isSaving || !newService.nome}
+                                                        className="flex-1 h-11 bg-gold text-black hover:bg-gold/90 font-medium"
+                                                    >
+                                                        {isSaving ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <Check className="mr-2 h-4 w-4" />
+                                                        )}
+                                                        Criar Serviço
                                                     </Button>
-                                                    <Button variant="ghost" onClick={() => setNewService(null)}>
+                                                    <Button
+                                                        variant="ghost"
+                                                        onClick={() => setNewService(null)}
+                                                        className="h-11 px-4 hover:bg-zinc-800"
+                                                    >
                                                         <X className="h-4 w-4" />
                                                     </Button>
                                                 </div>
