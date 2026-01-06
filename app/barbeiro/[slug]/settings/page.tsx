@@ -55,6 +55,14 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { ChevronDown } from 'lucide-react';
 
 interface Service {
@@ -1060,63 +1068,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                 .map(barber => (
                                                     <Card key={barber.id} className={`transition-all ${!barber.activo ? 'opacity-50' : ''} hover:border-gold/30 hover:shadow-lg hover:shadow-gold/5`}>
                                                         <CardContent className="p-4">
-                                                            {editingBarber === barber.id ? (
-                                                                /* Edit Mode */
-                                                                <div className="space-y-4">
-                                                                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                                                                        <div>
-                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Nome</Label>
-                                                                            <Input
-                                                                                value={barber.nome}
-                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, nome: e.target.value } : b))}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Email</Label>
-                                                                            <Input
-                                                                                value={barber.email || ''}
-                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, email: e.target.value } : b))}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Telefone</Label>
-                                                                            <Input
-                                                                                value={barber.telefone || ''}
-                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, telefone: e.target.value } : b))}
-                                                                            />
-                                                                        </div>
-                                                                        <div>
-                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Bio</Label>
-                                                                            <Input
-                                                                                value={barber.bio || ''}
-                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, bio: e.target.value } : b))}
-                                                                            />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center justify-between pt-2">
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Switch
-                                                                                checked={barber.activo}
-                                                                                onCheckedChange={(checked) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, activo: checked } : b))}
-                                                                            />
-                                                                            <span className="text-sm text-muted-foreground">Activo</span>
-                                                                        </div>
-                                                                        <div className="flex gap-2">
-                                                                            <Button
-                                                                                size="sm"
-                                                                                onClick={() => handleUpdateBarber(barber)}
-                                                                                disabled={isSaving}
-                                                                                className="bg-gold text-black hover:bg-gold/90"
-                                                                            >
-                                                                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                                                            </Button>
-                                                                            <Button size="sm" variant="ghost" onClick={() => setEditingBarber(null)}>
-                                                                                <X className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            ) : barberViewMode === 'gallery' ? (
+                                                            {barberViewMode === 'gallery' ? (
                                                                 /* Gallery View Mode */
                                                                 <div className="flex flex-col items-center text-center">
                                                                     <div className="relative group mb-3">
@@ -1229,6 +1181,166 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Edit Barber Modal */}
+            <Dialog open={!!editingBarber} onOpenChange={() => setEditingBarber(null)}>
+                <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <PenLine className="h-5 w-5 text-gold" />
+                            Editar Barbeiro
+                        </DialogTitle>
+                        <DialogDescription>
+                            Atualiza as informações do membro da equipa
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {editingBarber && (() => {
+                        const barber = barbers.find(b => b.id === editingBarber);
+                        if (!barber) return null;
+
+                        return (
+                            <div className="space-y-6 py-4">
+                                {/* Photo Upload Section */}
+                                <div className="flex items-start gap-6">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <label className="cursor-pointer group">
+                                            <div className="relative">
+                                                <div className={`flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30 transition-colors group-hover:border-gold/50 ${isUploading ? 'animate-pulse' : ''}`}>
+                                                    {barber.foto_url ? (
+                                                        <img src={barber.foto_url} alt={barber.nome} className="h-24 w-24 object-cover" />
+                                                    ) : isUploading ? (
+                                                        <Loader2 className="h-8 w-8 text-gold animate-spin" />
+                                                    ) : (
+                                                        <Camera className="h-10 w-10 text-gold/50 group-hover:text-gold transition-colors" />
+                                                    )}
+                                                </div>
+                                                {!isUploading && (
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Upload className="h-6 w-6 text-white" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <input
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                disabled={isUploading}
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) {
+                                                        handleFileUpload(file, (url) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, foto_url: url } : b)));
+                                                    }
+                                                }}
+                                            />
+                                        </label>
+                                        <span className="text-xs text-muted-foreground">
+                                            {isUploading ? 'A carregar...' : 'Clica para mudar'}
+                                        </span>
+                                        {barber.foto_url && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-xs text-destructive hover:text-destructive"
+                                                onClick={() => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, foto_url: '' } : b))}
+                                            >
+                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                Remover
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 space-y-4">
+                                        <div>
+                                            <Label className="mb-2 block text-sm text-muted-foreground">Nome *</Label>
+                                            <div className="relative">
+                                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                <Input
+                                                    value={barber.nome}
+                                                    onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, nome: e.target.value } : b))}
+                                                    className="pl-10 bg-zinc-800/50 border-zinc-700/50"
+                                                    placeholder="Nome do barbeiro"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <Switch
+                                                checked={barber.activo}
+                                                onCheckedChange={(checked) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, activo: checked } : b))}
+                                            />
+                                            <span className="text-sm">
+                                                {barber.activo ? (
+                                                    <span className="text-green-500">Activo</span>
+                                                ) : (
+                                                    <span className="text-red-500">Inactivo</span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Contact Info */}
+                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                    <div>
+                                        <Label className="mb-2 block text-sm text-muted-foreground">Email</Label>
+                                        <div className="relative">
+                                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                type="email"
+                                                value={barber.email || ''}
+                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, email: e.target.value } : b))}
+                                                className="pl-10 bg-zinc-800/50 border-zinc-700/50"
+                                                placeholder="email@exemplo.com"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label className="mb-2 block text-sm text-muted-foreground">Telefone</Label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                value={barber.telefone || ''}
+                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, telefone: e.target.value } : b))}
+                                                className="pl-10 bg-zinc-800/50 border-zinc-700/50"
+                                                placeholder="912 345 678"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Bio */}
+                                <div>
+                                    <Label className="mb-2 block text-sm text-muted-foreground">Bio / Especialidades</Label>
+                                    <textarea
+                                        value={barber.bio || ''}
+                                        onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, bio: e.target.value } : b))}
+                                        className="w-full h-24 rounded-md border border-zinc-700/50 bg-zinc-800/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/50 resize-none"
+                                        placeholder="Ex: Especialista em fade e barba, 5 anos de experiência..."
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setEditingBarber(null)} className="border-zinc-700 hover:bg-zinc-800">
+                            Cancelar
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                const barber = barbers.find(b => b.id === editingBarber);
+                                if (barber) handleUpdateBarber(barber);
+                            }}
+                            disabled={isSaving}
+                            className="bg-gold text-black hover:bg-gold/90"
+                        >
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                            Guardar Alterações
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
