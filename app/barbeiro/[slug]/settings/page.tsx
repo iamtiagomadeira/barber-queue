@@ -481,6 +481,130 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
 
             <main className="container mx-auto px-4 py-8">
                 <div className="mx-auto max-w-4xl space-y-8">
+                    {/* Pro Features Section */}
+                    <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-sm overflow-hidden">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10 ring-1 ring-amber-500/20">
+                                        <Crown className="h-5 w-5 text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-base">Funcionalidades Pro</CardTitle>
+                                        <p className="text-xs text-zinc-500">
+                                            {barbershop.is_pro ? 'Plano Pro ativo' : 'Upgrada para desbloquear'}
+                                        </p>
+                                    </div>
+                                </div>
+                                {barbershop.is_pro && (
+                                    <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-black">
+                                        <Sparkles className="h-3 w-3 mr-1" />
+                                        Pro
+                                    </Badge>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* SMS Notifications Toggle */}
+                            <div
+                                className={`flex items-center justify-between p-4 rounded-lg border transition-all ${barbershop.is_pro
+                                        ? 'border-zinc-700/50 bg-zinc-800/30'
+                                        : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
+                                    }`}
+                                onClick={!barbershop.is_pro ? () => setShowUpgradeDialog(true) : undefined}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${barbershop.is_pro ? 'bg-amber-500/20' : 'bg-zinc-700/50'
+                                        }`}>
+                                        <MessageSquare className={`h-4 w-4 ${barbershop.is_pro ? 'text-amber-400' : 'text-zinc-500'}`} />
+                                    </div>
+                                    <div>
+                                        <p className={`text-sm font-medium ${barbershop.is_pro ? 'text-white' : 'text-zinc-400'}`}>
+                                            Notificações SMS
+                                        </p>
+                                        <p className="text-xs text-zinc-500">
+                                            {barbershop.is_pro ? 'Envia SMS aos clientes' : 'Disponível no plano Pro'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {!barbershop.is_pro && (
+                                        <Lock className="h-4 w-4 text-zinc-500" />
+                                    )}
+                                    <Switch
+                                        checked={barbershop.is_pro}
+                                        disabled={!barbershop.is_pro}
+                                        onCheckedChange={() => {
+                                            if (!barbershop.is_pro) {
+                                                setShowUpgradeDialog(true);
+                                            }
+                                        }}
+                                        onClick={(e) => {
+                                            if (!barbershop.is_pro) {
+                                                e.preventDefault();
+                                                setShowUpgradeDialog(true);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Online Payments Toggle */}
+                            <div
+                                className={`flex items-center justify-between p-4 rounded-lg border transition-all ${barbershop.is_pro
+                                        ? 'border-zinc-700/50 bg-zinc-800/30'
+                                        : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
+                                    }`}
+                                onClick={!barbershop.is_pro ? () => setShowUpgradeDialog(true) : undefined}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${barbershop.is_pro ? 'bg-amber-500/20' : 'bg-zinc-700/50'
+                                        }`}>
+                                        <CreditCard className={`h-4 w-4 ${barbershop.is_pro ? 'text-amber-400' : 'text-zinc-500'}`} />
+                                    </div>
+                                    <div>
+                                        <p className={`text-sm font-medium ${barbershop.is_pro ? 'text-white' : 'text-zinc-400'}`}>
+                                            Pagamentos Online
+                                        </p>
+                                        <p className="text-xs text-zinc-500">
+                                            {barbershop.is_pro ? 'Aceita pagamentos online' : 'Disponível no plano Pro'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {!barbershop.is_pro && (
+                                        <Lock className="h-4 w-4 text-zinc-500" />
+                                    )}
+                                    <Switch
+                                        checked={barbershop.is_pro}
+                                        disabled={!barbershop.is_pro}
+                                        onCheckedChange={() => {
+                                            if (!barbershop.is_pro) {
+                                                setShowUpgradeDialog(true);
+                                            }
+                                        }}
+                                        onClick={(e) => {
+                                            if (!barbershop.is_pro) {
+                                                e.preventDefault();
+                                                setShowUpgradeDialog(true);
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {!barbershop.is_pro && (
+                                <Button
+                                    onClick={() => setShowUpgradeDialog(true)}
+                                    className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold hover:from-amber-400 hover:to-orange-400"
+                                >
+                                    <Crown className="h-4 w-4 mr-2" />
+                                    Fazer Upgrade para Pro - 19€/mês
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {/* Premium Tab Navigation */}
                     <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl border border-white/5 backdrop-blur-sm">
                         <button
