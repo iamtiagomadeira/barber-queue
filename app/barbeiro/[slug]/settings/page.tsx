@@ -33,6 +33,7 @@ import {
     LayoutGrid,
     List,
     Upload,
+    Search,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -132,9 +133,10 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [newBarber, setNewBarber] = useState<Partial<Barber> | null>(null);
     const [editingBarber, setEditingBarber] = useState<string | null>(null);
-    const [barberViewMode, setBarberViewMode] = useState<'list' | 'gallery'>('list');
+    const [barberViewMode, setBarberViewMode] = useState<'list' | 'gallery'>('gallery');
     const [isUploading, setIsUploading] = useState(false);
     const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
+    const [barberSearch, setBarberSearch] = useState('');
 
     const fetchServices = useCallback(async () => {
         try {
@@ -806,8 +808,9 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
 
                             {activeTab === 'barbers' && (
                                 <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
+                                    {/* Header Row */}
+                                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                        <div className="flex items-center gap-3 flex-1">
                                             <h2 className="text-lg font-semibold">Equipa</h2>
                                             {/* View Mode Toggle */}
                                             <div className="flex items-center gap-1 bg-zinc-800/50 rounded-lg p-1">
@@ -842,6 +845,30 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                             Adicionar Barbeiro
                                         </Button>
                                     </div>
+
+                                    {/* Search Bar */}
+                                    {barbers.length > 0 && (
+                                        <div className="relative">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                <Search className="h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                value={barberSearch}
+                                                onChange={(e) => setBarberSearch(e.target.value)}
+                                                placeholder="Pesquisar barbeiros..."
+                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
+                                            />
+                                            {barberSearch && (
+                                                <button
+                                                    onClick={() => setBarberSearch('')}
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* New Barber Form */}
                                     {newBarber && (
@@ -1019,143 +1046,154 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                 </CardContent>
                                             </Card>
                                         ) : (
-                                            barbers.map(barber => (
-                                                <Card key={barber.id} className={`transition-colors ${!barber.activo ? 'opacity-50' : ''} hover:border-gold/30`}>
-                                                    <CardContent className="p-4">
-                                                        {editingBarber === barber.id ? (
-                                                            /* Edit Mode */
-                                                            <div className="space-y-4">
-                                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-                                                                    <div>
-                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Nome</Label>
-                                                                        <Input
-                                                                            value={barber.nome}
-                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, nome: e.target.value } : b))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Email</Label>
-                                                                        <Input
-                                                                            value={barber.email || ''}
-                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, email: e.target.value } : b))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Telefone</Label>
-                                                                        <Input
-                                                                            value={barber.telefone || ''}
-                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, telefone: e.target.value } : b))}
-                                                                        />
-                                                                    </div>
-                                                                    <div>
-                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Bio</Label>
-                                                                        <Input
-                                                                            value={barber.bio || ''}
-                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, bio: e.target.value } : b))}
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                <div className="flex items-center justify-between pt-2">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <Switch
-                                                                            checked={barber.activo}
-                                                                            onCheckedChange={(checked) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, activo: checked } : b))}
-                                                                        />
-                                                                        <span className="text-sm text-muted-foreground">Activo</span>
-                                                                    </div>
-                                                                    <div className="flex gap-2">
-                                                                        <Button
-                                                                            size="sm"
-                                                                            onClick={() => handleUpdateBarber(barber)}
-                                                                            disabled={isSaving}
-                                                                            className="bg-gold text-black hover:bg-gold/90"
-                                                                        >
-                                                                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                                                                        </Button>
-                                                                        <Button size="sm" variant="ghost" onClick={() => setEditingBarber(null)}>
-                                                                            <X className="h-4 w-4" />
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        ) : barberViewMode === 'gallery' ? (
-                                                            /* Gallery View Mode */
-                                                            <div className="flex flex-col items-center text-center">
-                                                                <div className="relative group mb-3">
-                                                                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
-                                                                        {barber.foto_url ? (
-                                                                            <img src={barber.foto_url} alt={barber.nome} className="h-24 w-24 object-cover" />
-                                                                        ) : (
-                                                                            <User className="h-10 w-10 text-gold" />
-                                                                        )}
-                                                                    </div>
-                                                                    {!barber.activo && (
-                                                                        <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                                                                            <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                            barbers
+                                                .filter(barber => {
+                                                    if (!barberSearch) return true;
+                                                    const search = barberSearch.toLowerCase();
+                                                    return (
+                                                        barber.nome.toLowerCase().includes(search) ||
+                                                        (barber.email && barber.email.toLowerCase().includes(search)) ||
+                                                        (barber.bio && barber.bio.toLowerCase().includes(search)) ||
+                                                        (barber.telefone && barber.telefone.includes(search))
+                                                    );
+                                                })
+                                                .map(barber => (
+                                                    <Card key={barber.id} className={`transition-all ${!barber.activo ? 'opacity-50' : ''} hover:border-gold/30 hover:shadow-lg hover:shadow-gold/5`}>
+                                                        <CardContent className="p-4">
+                                                            {editingBarber === barber.id ? (
+                                                                /* Edit Mode */
+                                                                <div className="space-y-4">
+                                                                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                                                        <div>
+                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Nome</Label>
+                                                                            <Input
+                                                                                value={barber.nome}
+                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, nome: e.target.value } : b))}
+                                                                            />
                                                                         </div>
-                                                                    )}
+                                                                        <div>
+                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Email</Label>
+                                                                            <Input
+                                                                                value={barber.email || ''}
+                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, email: e.target.value } : b))}
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Telefone</Label>
+                                                                            <Input
+                                                                                value={barber.telefone || ''}
+                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, telefone: e.target.value } : b))}
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <Label className="mb-1 block text-xs text-muted-foreground">Bio</Label>
+                                                                            <Input
+                                                                                value={barber.bio || ''}
+                                                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, bio: e.target.value } : b))}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between pt-2">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Switch
+                                                                                checked={barber.activo}
+                                                                                onCheckedChange={(checked) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, activo: checked } : b))}
+                                                                            />
+                                                                            <span className="text-sm text-muted-foreground">Activo</span>
+                                                                        </div>
+                                                                        <div className="flex gap-2">
+                                                                            <Button
+                                                                                size="sm"
+                                                                                onClick={() => handleUpdateBarber(barber)}
+                                                                                disabled={isSaving}
+                                                                                className="bg-gold text-black hover:bg-gold/90"
+                                                                            >
+                                                                                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                                                            </Button>
+                                                                            <Button size="sm" variant="ghost" onClick={() => setEditingBarber(null)}>
+                                                                                <X className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <h3 className="font-semibold text-sm">{barber.nome}</h3>
-                                                                {barber.bio && (
-                                                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{barber.bio}</p>
-                                                                )}
-                                                                <div className="flex gap-1 mt-3">
-                                                                    <Button size="sm" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
-                                                                        <PenLine className="h-3 w-3" />
-                                                                    </Button>
-                                                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
-                                                                        <Trash2 className="h-3 w-3" />
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            /* List View Mode */
-                                                            <div className="flex items-center gap-4">
-                                                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold/10 overflow-hidden">
-                                                                    {barber.foto_url ? (
-                                                                        <img src={barber.foto_url} alt={barber.nome} className="h-14 w-14 object-cover" />
-                                                                    ) : (
-                                                                        <User className="h-6 w-6 text-gold" />
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <h3 className="font-semibold">{barber.nome}</h3>
+                                                            ) : barberViewMode === 'gallery' ? (
+                                                                /* Gallery View Mode */
+                                                                <div className="flex flex-col items-center text-center">
+                                                                    <div className="relative group mb-3">
+                                                                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
+                                                                            {barber.foto_url ? (
+                                                                                <img src={barber.foto_url} alt={barber.nome} className="h-24 w-24 object-cover" />
+                                                                            ) : (
+                                                                                <User className="h-10 w-10 text-gold" />
+                                                                            )}
+                                                                        </div>
                                                                         {!barber.activo && (
-                                                                            <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                                                                <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                            </div>
                                                                         )}
                                                                     </div>
+                                                                    <h3 className="font-semibold text-sm">{barber.nome}</h3>
                                                                     {barber.bio && (
-                                                                        <p className="text-sm text-muted-foreground truncate">{barber.bio}</p>
+                                                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{barber.bio}</p>
                                                                     )}
-                                                                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                                                                        {barber.email && (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <Mail className="h-3 w-3" />
-                                                                                {barber.email}
-                                                                            </span>
-                                                                        )}
-                                                                        {barber.telefone && (
-                                                                            <span className="flex items-center gap-1">
-                                                                                <Phone className="h-3 w-3" />
-                                                                                {barber.telefone}
-                                                                            </span>
-                                                                        )}
+                                                                    <div className="flex gap-1 mt-3">
+                                                                        <Button size="sm" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
+                                                                            <PenLine className="h-3 w-3" />
+                                                                        </Button>
+                                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
+                                                                            <Trash2 className="h-3 w-3" />
+                                                                        </Button>
                                                                     </div>
                                                                 </div>
-                                                                <div className="flex gap-1">
-                                                                    <Button size="icon" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
-                                                                        <PenLine className="h-4 w-4" />
-                                                                    </Button>
-                                                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
+                                                            ) : (
+                                                                /* List View Mode */
+                                                                <div className="flex items-center gap-4">
+                                                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold/10 overflow-hidden">
+                                                                        {barber.foto_url ? (
+                                                                            <img src={barber.foto_url} alt={barber.nome} className="h-14 w-14 object-cover" />
+                                                                        ) : (
+                                                                            <User className="h-6 w-6 text-gold" />
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <h3 className="font-semibold">{barber.nome}</h3>
+                                                                            {!barber.activo && (
+                                                                                <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                            )}
+                                                                        </div>
+                                                                        {barber.bio && (
+                                                                            <p className="text-sm text-muted-foreground truncate">{barber.bio}</p>
+                                                                        )}
+                                                                        <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                                            {barber.email && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Mail className="h-3 w-3" />
+                                                                                    {barber.email}
+                                                                                </span>
+                                                                            )}
+                                                                            {barber.telefone && (
+                                                                                <span className="flex items-center gap-1">
+                                                                                    <Phone className="h-3 w-3" />
+                                                                                    {barber.telefone}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="flex gap-1">
+                                                                        <Button size="icon" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
+                                                                            <PenLine className="h-4 w-4" />
+                                                                        </Button>
+                                                                        <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        )}
-                                                    </CardContent>
-                                                </Card>
-                                            ))
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
+                                                ))
                                         )}
                                     </div>
                                 </div>
