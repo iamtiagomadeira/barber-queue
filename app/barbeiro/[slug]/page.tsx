@@ -8,10 +8,21 @@ import QueueList from '@/app/barbeiro/components/QueueList';
 import ManualEntryForm from '@/app/barbeiro/components/ManualEntryForm';
 import { QueueToggle } from '@/app/barbeiro/components/QueueToggle';
 import QRCodeDisplay from '@/components/QRCodeDisplay';
-import { Scissors, LogOut, Settings2, Loader2, Users, Calendar } from 'lucide-react';
+import { Scissors, LogOut, Settings2, Loader2, Users, Calendar, Monitor, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 import BookingsCalendar from '@/app/barbeiro/components/BookingsCalendar';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type ViewMode = 'queue' | 'calendar';
 
@@ -28,6 +39,7 @@ function BarberDashboardContent({ barbershop }: { barbershop: Barbershop }) {
     const [refreshKey, setRefreshKey] = useState(0);
     const [queueOpen, setQueueOpen] = useState(barbershop.fila_aberta);
     const [view, setView] = useState<ViewMode>('queue');
+    const [isClearing, setIsClearing] = useState(false);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
@@ -58,6 +70,29 @@ function BarberDashboardContent({ barbershop }: { barbershop: Barbershop }) {
         }
     };
 
+    const handleOpenKiosk = () => {
+        window.open(`/b/${barbershop.slug}`, '_blank', 'fullscreen=yes');
+    };
+
+    const handleClearQueue = async () => {
+        setIsClearing(true);
+        try {
+            // Clear all pending queue entries for this barbershop
+            const { error } = await supabase
+                .from('fila')
+                .delete()
+                .eq('barbearia_id', barbershop.id)
+                .in('status', ['waiting', 'in_service']);
+
+            if (error) throw error;
+            handleQueueRefresh();
+        } catch (error) {
+            console.error('Error clearing queue:', error);
+        } finally {
+            setIsClearing(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
@@ -73,8 +108,52 @@ function BarberDashboardContent({ barbershop }: { barbershop: Barbershop }) {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
                         <QueueToggle isOpen={queueOpen} onToggle={handleQueueToggle} />
+
+                        {/* Kiosk Mode Button */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenKiosk}
+                            className="bg-gold/10 border-gold/30 text-gold hover:bg-gold/20"
+                        >
+                            <Monitor className="mr-2 h-4 w-4" />
+                            Modo Quiosque
+                        </Button>
+
+                        {/* Clear Queue Button */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-red-500/30 text-red-500 hover:bg-red-500/10"
+                                    disabled={isClearing}
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Fechar Dia
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Fechar Dia / Limpar Fila</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Isto irá remover todas as senhas pendentes da fila. Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleClearQueue}
+                                        className="bg-red-500 hover:bg-red-600"
+                                    >
+                                        Confirmar
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
                         <Button variant="outline" size="sm" onClick={() => router.push(`/barbeiro/${barbershop.slug}/settings`)}>
                             <Settings2 className="mr-2 h-4 w-4" />
                             Definições

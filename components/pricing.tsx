@@ -3,10 +3,9 @@
 import { buttonVariants } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { Check, Star, Sparkles, Zap } from "lucide-react";
+import { Check, Star, Sparkles, Zap, Mail } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef, ElementRef } from "react";
 import confetti from "canvas-confetti";
@@ -23,22 +22,23 @@ interface PricingPlan {
   buttonText: string;
   href: string;
   isPopular: boolean;
-  icon?: React.ReactNode;
+  isContactSales?: boolean;
 }
 
 interface PricingProps {
   plans: PricingPlan[];
   title?: string;
   description?: string;
+  onUpgradeClick?: () => void;
 }
 
 export function Pricing({
   plans,
   title = "Planos & Preços",
   description = "Escolhe o plano ideal para o crescimento do teu negócio.",
+  onUpgradeClick,
 }: PricingProps) {
   const [isMonthly, setIsMonthly] = useState(true);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
   const switchRef = useRef<ElementRef<typeof SwitchPrimitives.Root>>(null);
 
   const handleToggle = (checked: boolean) => {
@@ -173,7 +173,7 @@ export function Pricing({
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-black text-xs font-bold shadow-lg shadow-amber-500/25">
                       <Star className="h-3.5 w-3.5 fill-current" />
-                      MAIS POPULAR
+                      RECOMENDADO
                     </span>
                   </div>
                 )}
@@ -233,20 +233,48 @@ export function Pricing({
                 </ul>
 
                 {/* CTA Button */}
-                <Link
-                  href={plan.href}
-                  className={cn(
-                    buttonVariants({ size: "lg" }),
-                    "w-full h-12 text-base font-semibold transition-all duration-300",
-                    "transform hover:scale-[1.02] active:scale-[0.98]",
-                    plan.isPopular
-                      ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30"
-                      : "bg-white/5 border-2 border-gold/20 text-gold hover:bg-gold/10 hover:border-gold/40"
-                  )}
-                >
-                  {plan.buttonText}
-                  {plan.isPopular && <Zap className="ml-2 h-4 w-4" />}
-                </Link>
+                {plan.isContactSales ? (
+                  <a
+                    href={plan.href}
+                    className={cn(
+                      buttonVariants({ size: "lg" }),
+                      "w-full h-12 text-base font-semibold transition-all duration-300",
+                      "transform hover:scale-[1.02] active:scale-[0.98]",
+                      "bg-white/5 border-2 border-gold/20 text-gold hover:bg-gold/10 hover:border-gold/40"
+                    )}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    {plan.buttonText}
+                  </a>
+                ) : plan.isPopular && onUpgradeClick ? (
+                  <button
+                    onClick={onUpgradeClick}
+                    className={cn(
+                      buttonVariants({ size: "lg" }),
+                      "w-full h-12 text-base font-semibold transition-all duration-300",
+                      "transform hover:scale-[1.02] active:scale-[0.98]",
+                      "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30"
+                    )}
+                  >
+                    {plan.buttonText}
+                    <Zap className="ml-2 h-4 w-4" />
+                  </button>
+                ) : (
+                  <Link
+                    href={plan.href}
+                    className={cn(
+                      buttonVariants({ size: "lg" }),
+                      "w-full h-12 text-base font-semibold transition-all duration-300",
+                      "transform hover:scale-[1.02] active:scale-[0.98]",
+                      plan.isPopular
+                        ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30"
+                        : "bg-white/5 border-2 border-gold/20 text-gold hover:bg-gold/10 hover:border-gold/40"
+                    )}
+                  >
+                    {plan.buttonText}
+                    {plan.isPopular && <Zap className="ml-2 h-4 w-4" />}
+                  </Link>
+                )}
 
                 {/* Billing Info */}
                 <p className="mt-4 text-center text-xs text-muted-foreground">
@@ -276,6 +304,6 @@ export function Pricing({
           </div>
         </motion.div>
       </div>
-    </section>
+    </section >
   );
 }

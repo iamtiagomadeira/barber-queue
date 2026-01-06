@@ -6,7 +6,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-12-15.clover',
 });
 
-const PRICE_ID = 'price_1SmZchPh2LzOV5SxyqXayME1';
+const PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+
+if (!PRICE_ID) {
+    console.error('NEXT_PUBLIC_STRIPE_PRO_PRICE_ID is not set');
+}
 
 export async function POST(request: NextRequest) {
     try {

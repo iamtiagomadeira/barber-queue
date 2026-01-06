@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Copy, Download, Check, QrCode } from 'lucide-react';
+import { Copy, Download, Check, QrCode, Printer } from 'lucide-react';
 
 interface QRCodeDisplayProps {
     barbershopSlug?: string;
+    barbershopName?: string;
 }
 
-export default function QRCodeDisplay({ barbershopSlug }: QRCodeDisplayProps) {
+export default function QRCodeDisplay({ barbershopSlug, barbershopName }: QRCodeDisplayProps) {
     const [appUrl, setAppUrl] = useState('');
     const [copied, setCopied] = useState(false);
     const qrRef = useRef<HTMLDivElement>(null);
@@ -59,6 +60,77 @@ export default function QRCodeDisplay({ barbershopSlug }: QRCodeDisplayProps) {
         img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     };
 
+    const handlePrintQR = () => {
+        if (!qrRef.current) return;
+
+        const svg = qrRef.current.querySelector('svg');
+        if (!svg) return;
+
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>QR Code - ${barbershopName || 'Barbearia'}</title>
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 100vh;
+                        padding: 40px;
+                        text-align: center;
+                    }
+                    .qr-container {
+                        padding: 20px;
+                        border: 3px solid #000;
+                        border-radius: 16px;
+                        margin-bottom: 24px;
+                    }
+                    .qr-container svg {
+                        width: 250px;
+                        height: 250px;
+                    }
+                    h1 {
+                        font-size: 28px;
+                        margin-bottom: 8px;
+                    }
+                    p {
+                        font-size: 16px;
+                        color: #666;
+                        max-width: 300px;
+                    }
+                    .url {
+                        margin-top: 16px;
+                        font-size: 14px;
+                        color: #999;
+                        word-break: break-all;
+                    }
+                    @media print {
+                        body { padding: 20px; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="qr-container">${svgData}</div>
+                <h1>${barbershopName || 'Entre na Fila Virtual'}</h1>
+                <p>Aponte a câmara do telemóvel para o QR Code e entre na fila sem esperar.</p>
+                <p class="url">${appUrl}</p>
+                <script>
+                    window.onload = function() { window.print(); }
+                </script>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
     if (!appUrl) {
         return (
             <div className="flex h-48 items-center justify-center">
@@ -98,7 +170,7 @@ export default function QRCodeDisplay({ barbershopSlug }: QRCodeDisplayProps) {
                     <p className="mt-1 break-all font-mono text-sm">{appUrl}</p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button
                         variant="outline"
                         size="sm"
@@ -124,7 +196,15 @@ export default function QRCodeDisplay({ barbershopSlug }: QRCodeDisplayProps) {
                         className="flex-1"
                     >
                         <Download className="mr-2 h-4 w-4" />
-                        Baixar QR
+                        Baixar
+                    </Button>
+                    <Button
+                        size="sm"
+                        onClick={handlePrintQR}
+                        className="flex-1 bg-gold text-black hover:bg-gold/90"
+                    >
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir
                     </Button>
                 </div>
             </div>
