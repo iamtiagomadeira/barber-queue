@@ -53,7 +53,7 @@ interface BookingFormProps {
 
 export default function BookingForm({ barbeariaId, services: propServices }: BookingFormProps) {
     const [step, setStep] = useState<BookingStep>('service');
-    const [services, setServices] = useState<Service[]>(MOCK_SERVICES);
+    const [services, setServices] = useState<Service[]>(propServices || []);
     const [barbers, setBarbers] = useState<Barber[]>([]);
     const [slots, setSlots] = useState<string[]>([]);
     const [slotsLoading, setSlotsLoading] = useState(false);
@@ -73,37 +73,49 @@ export default function BookingForm({ barbeariaId, services: propServices }: Boo
 
     const { fireConfetti } = useConfetti();
 
-    // Fetch services
+    // Update services when props change
     useEffect(() => {
+        if (propServices && propServices.length > 0) {
+            setServices(propServices);
+        }
+    }, [propServices]);
+
+    // Fetch services only if not provided via props
+    useEffect(() => {
+        if (propServices && propServices.length > 0) return; // Use prop services
+        if (!barbeariaId) return; // Need barbearia_id to fetch
+
         async function fetchServices() {
             try {
-                const res = await fetch('/api/services');
+                const res = await fetch(`/api/services?barbearia_id=${barbeariaId}`);
                 const data = await res.json();
                 if (data.success && data.data.length > 0) {
                     setServices(data.data);
                 }
             } catch (err) {
-                console.log('Using mock services');
+                console.log('Error fetching services');
             }
         }
         fetchServices();
-    }, []);
+    }, [barbeariaId, propServices]);
 
     // Fetch barbers
     useEffect(() => {
+        if (!barbeariaId) return;
+
         async function fetchBarbers() {
             try {
-                const res = await fetch('/api/barbers');
+                const res = await fetch(`/api/barbers?barbearia_id=${barbeariaId}&active_only=true`);
                 const data = await res.json();
                 if (data.success) {
-                    setBarbers(data.data);
+                    setBarbers(data.data || []);
                 }
             } catch (err) {
                 console.log('Error fetching barbers');
             }
         }
         fetchBarbers();
-    }, []);
+    }, [barbeariaId]);
 
     // Fetch slots when date or barber changes
     useEffect(() => {

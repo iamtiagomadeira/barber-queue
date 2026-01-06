@@ -44,6 +44,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ChevronDown } from 'lucide-react';
 
 interface Service {
@@ -124,6 +134,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [editingBarber, setEditingBarber] = useState<string | null>(null);
     const [barberViewMode, setBarberViewMode] = useState<'list' | 'gallery'>('list');
     const [isUploading, setIsUploading] = useState(false);
+    const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
 
     const fetchServices = useCallback(async () => {
         try {
@@ -314,16 +325,18 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
         }
     };
 
-    const handleDeleteBarber = async (id: string) => {
-        if (!confirm('Tens a certeza que queres eliminar este barbeiro?')) return;
+    const handleDeleteBarber = async () => {
+        if (!barberToDelete) return;
         try {
-            const response = await fetch(`/api/barbers?id=${id}`, { method: 'DELETE' });
+            const response = await fetch(`/api/barbers?id=${barberToDelete.id}`, { method: 'DELETE' });
             const result = await response.json();
             if (result.success) {
-                setBarbers(prev => prev.filter(b => b.id !== id));
+                setBarbers(prev => prev.filter(b => b.id !== barberToDelete.id));
             }
         } catch (error) {
             console.error('Error deleting barber:', error);
+        } finally {
+            setBarberToDelete(null);
         }
     };
 
@@ -1090,7 +1103,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                                     <Button size="sm" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
                                                                         <PenLine className="h-3 w-3" />
                                                                     </Button>
-                                                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteBarber(barber.id)}>
+                                                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
                                                                         <Trash2 className="h-3 w-3" />
                                                                     </Button>
                                                                 </div>
@@ -1134,7 +1147,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                                     <Button size="icon" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
                                                                         <PenLine className="h-4 w-4" />
                                                                     </Button>
-                                                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteBarber(barber.id)}>
+                                                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
                                                                         <Trash2 className="h-4 w-4" />
                                                                     </Button>
                                                                 </div>
@@ -1151,6 +1164,33 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                     )}
                 </div>
             </main>
+
+            {/* Delete Barber Confirmation Modal */}
+            <AlertDialog open={!!barberToDelete} onOpenChange={() => setBarberToDelete(null)}>
+                <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <Trash2 className="h-5 w-5 text-destructive" />
+                            Eliminar Barbeiro
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground">
+                            Tens a certeza que queres eliminar <strong className="text-foreground">{barberToDelete?.nome}</strong>?
+                            Esta ação não pode ser revertida.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="border-zinc-700 hover:bg-zinc-800">
+                            Cancelar
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteBarber}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
