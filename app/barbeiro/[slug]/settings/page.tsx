@@ -123,6 +123,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [newBarber, setNewBarber] = useState<Partial<Barber> | null>(null);
     const [editingBarber, setEditingBarber] = useState<string | null>(null);
     const [barberViewMode, setBarberViewMode] = useState<'list' | 'gallery'>('list');
+    const [isUploading, setIsUploading] = useState(false);
 
     const fetchServices = useCallback(async () => {
         try {
@@ -323,6 +324,36 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
             }
         } catch (error) {
             console.error('Error deleting barber:', error);
+        }
+    };
+
+    // File upload handler
+    const handleFileUpload = async (file: File, setPhotoUrl: (url: string) => void) => {
+        if (!file) return;
+
+        setIsUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', 'barbeiros');
+
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            if (result.success && result.url) {
+                setPhotoUrl(result.url);
+            } else {
+                console.error('Upload failed:', result.error);
+                alert(result.error || 'Erro ao fazer upload da imagem');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            alert('Erro ao fazer upload da imagem');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -812,39 +843,62 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                 {/* Photo Upload */}
                                                 <div className="flex items-start gap-4">
                                                     <div className="flex flex-col items-center gap-2">
-                                                        <div className="relative">
-                                                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
-                                                                {newBarber.foto_url ? (
-                                                                    <img
-                                                                        src={newBarber.foto_url}
-                                                                        alt="Preview"
-                                                                        className="h-20 w-20 object-cover"
-                                                                        onError={(e) => {
-                                                                            e.currentTarget.style.display = 'none';
-                                                                        }}
-                                                                    />
-                                                                ) : (
-                                                                    <Camera className="h-8 w-8 text-gold/50" />
+                                                        <label className="cursor-pointer group">
+                                                            <div className="relative">
+                                                                <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30 transition-colors group-hover:border-gold/50 ${isUploading ? 'animate-pulse' : ''}`}>
+                                                                    {newBarber.foto_url ? (
+                                                                        <img
+                                                                            src={newBarber.foto_url}
+                                                                            alt="Preview"
+                                                                            className="h-20 w-20 object-cover"
+                                                                        />
+                                                                    ) : isUploading ? (
+                                                                        <Loader2 className="h-8 w-8 text-gold animate-spin" />
+                                                                    ) : (
+                                                                        <Camera className="h-8 w-8 text-gold/50 group-hover:text-gold transition-colors" />
+                                                                    )}
+                                                                </div>
+                                                                {!isUploading && (
+                                                                    <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                        <Upload className="h-5 w-5 text-white" />
+                                                                    </div>
                                                                 )}
                                                             </div>
-                                                        </div>
-                                                        <span className="text-xs text-muted-foreground">Foto de Perfil</span>
+                                                            <input
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                disabled={isUploading}
+                                                                onChange={(e) => {
+                                                                    const file = e.target.files?.[0];
+                                                                    if (file) {
+                                                                        handleFileUpload(file, (url) => setNewBarber(prev => ({ ...prev!, foto_url: url })));
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </label>
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {isUploading ? 'A carregar...' : 'Clica para carregar'}
+                                                        </span>
                                                     </div>
                                                     <div className="flex-1">
-                                                        <Label className="mb-2 block text-sm text-muted-foreground">URL da Foto</Label>
-                                                        <div className="relative">
-                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                                                <Upload className="h-4 w-4 text-muted-foreground" />
-                                                            </div>
-                                                            <Input
-                                                                type="url"
-                                                                value={newBarber.foto_url || ''}
-                                                                onChange={(e) => setNewBarber(prev => ({ ...prev!, foto_url: e.target.value }))}
-                                                                placeholder="https://exemplo.com/foto.jpg"
-                                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
-                                                            />
-                                                        </div>
-                                                        <p className="text-xs text-muted-foreground mt-1">Cole o URL de uma imagem ou foto</p>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Foto de Perfil</Label>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            Clica na imagem para fazer upload de uma foto.
+                                                            Formatos suportados: JPEG, PNG, WebP, GIF. Máximo 5MB.
+                                                        </p>
+                                                        {newBarber.foto_url && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="mt-2 text-xs text-destructive hover:text-destructive"
+                                                                onClick={() => setNewBarber(prev => ({ ...prev!, foto_url: '' }))}
+                                                            >
+                                                                <Trash2 className="h-3 w-3 mr-1" />
+                                                                Remover foto
+                                                            </Button>
+                                                        )}
                                                     </div>
                                                 </div>
 
