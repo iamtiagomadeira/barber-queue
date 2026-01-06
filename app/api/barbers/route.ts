@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         if (error) {
             console.error('Error creating barber:', error);
             return NextResponse.json(
-                { error: 'Erro ao criar barbeiro' },
+                { error: error.message || 'Erro ao criar barbeiro', details: error.code },
                 { status: 500 }
             );
         }

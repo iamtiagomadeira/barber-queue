@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
     apiVersion: '2025-12-15.clover',
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+// Create Supabase admin client for webhook (bypasses RLS)
+function getSupabaseAdmin() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) return null;
+    return createClient(url, serviceKey);
+}
 
 export async function POST(request: NextRequest) {
     const body = await request.text();
@@ -26,7 +35,60 @@ export async function POST(request: NextRequest) {
 
     // Handle the event
     switch (event.type) {
-        case 'payment_intent.succeeded':
+        case 'checkout.session.completed': {
+            const session = event.data.object as Stripe.Checkout.Session;
+            console.log('✅ Checkout session completed:', session.id);
+
+            // Extract barbearia_id from metadata
+            const barbearia_id = session.metadata?.barbearia_id;
+            const customerId = session.customer as string;
+
+            if (barbearia_id) {
+                const supabase = getSupabaseAdmin();
+                if (supabase) {
+                    // Update barbershop to Pro status
+                    const { error } = await supabase
+                        .from('barbearias')
+                        .update({
+                            is_pro: true,
+                            stripe_customer_id: customerId,
+                        })
+                        .eq('id', barbearia_id);
+
+                    if (error) {
+                        console.error('Error upgrading to Pro:', error);
+                    } else {
+                        console.log(`🎉 Barbershop ${barbearia_id} upgraded to Pro!`);
+                    }
+                }
+            }
+            break;
+        }
+
+        case 'customer.subscription.deleted': {
+            // Handle subscription cancellation
+            const subscription = event.data.object as Stripe.Subscription;
+            const customerId = subscription.customer as string;
+            console.log('❌ Subscription canceled:', subscription.id);
+
+            const supabase = getSupabaseAdmin();
+            if (supabase && customerId) {
+                // Downgrade to free
+                const { error } = await supabase
+                    .from('barbearias')
+                    .update({ is_pro: false })
+                    .eq('stripe_customer_id', customerId);
+
+                if (error) {
+                    console.error('Error downgrading from Pro:', error);
+                } else {
+                    console.log(`📉 Customer ${customerId} downgraded to Free`);
+                }
+            }
+            break;
+        }
+
+        case 'payment_intent.succeeded': {
             const paymentIntent = event.data.object as Stripe.PaymentIntent;
             console.log('💰 Payment succeeded:', paymentIntent.id);
 
@@ -34,20 +96,22 @@ export async function POST(request: NextRequest) {
             const metadata = paymentIntent.metadata;
             if (metadata?.booking_id) {
                 // Update booking status to confirmed
-                // This could also trigger SMS confirmation
                 console.log('Booking confirmed:', metadata.booking_id);
             }
             break;
+        }
 
-        case 'payment_intent.payment_failed':
+        case 'payment_intent.payment_failed': {
             const failedPayment = event.data.object as Stripe.PaymentIntent;
             console.log('❌ Payment failed:', failedPayment.id);
             break;
+        }
 
-        case 'charge.refunded':
+        case 'charge.refunded': {
             const refund = event.data.object as Stripe.Charge;
             console.log('💸 Refund processed:', refund.id);
             break;
+        }
 
         default:
             console.log(`Unhandled event type: ${event.type}`);
@@ -62,3 +126,4 @@ export const config = {
         bodyParser: false,
     },
 };
+

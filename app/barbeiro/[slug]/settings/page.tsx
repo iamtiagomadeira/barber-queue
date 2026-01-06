@@ -34,6 +34,10 @@ import {
     List,
     Upload,
     Search,
+    Lock,
+    Crown,
+    MessageSquare,
+    CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -65,6 +69,13 @@ import {
 } from '@/components/ui/dialog';
 import { ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 
 interface Service {
     id: string;
@@ -98,6 +109,7 @@ interface Barbershop {
     id: string;
     nome: string;
     slug: string;
+    is_pro?: boolean;
 }
 
 const DIAS_SEMANA = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -146,6 +158,9 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [isUploading, setIsUploading] = useState(false);
     const [barberToDelete, setBarberToDelete] = useState<Barber | null>(null);
     const [barberSearch, setBarberSearch] = useState('');
+    const [viewingBarber, setViewingBarber] = useState<Barber | null>(null);
+    const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+    const [isUpgrading, setIsUpgrading] = useState(false);
     const { toast } = useToast();
 
     const fetchServices = useCallback(async () => {
@@ -318,9 +333,25 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
             if (result.success) {
                 setBarbers(prev => [...prev, result.data]);
                 setNewBarber(null);
+                toast({
+                    title: "Barbeiro adicionado",
+                    description: `${newBarber.nome} foi adicionado à equipa.`,
+                });
+            } else {
+                console.error('Error creating barber:', result.error);
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao criar barbeiro",
+                    description: result.error || "Não foi possível criar o barbeiro. Verifica as permissões.",
+                });
             }
         } catch (error) {
             console.error('Error creating barber:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro de rede",
+                description: "Não foi possível conectar ao servidor. Tenta novamente.",
+            });
         } finally {
             setIsSaving(false);
         }
@@ -391,54 +422,97 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
         }
     };
 
+    // Handle Pro upgrade
+    const handleUpgrade = async () => {
+        setIsUpgrading(true);
+        try {
+            const response = await fetch('/api/subscription/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    barbearia_id: barbershop.id,
+                    slug: barbershop.slug,
+                }),
+            });
+            const result = await response.json();
+            if (result.success && result.url) {
+                window.location.href = result.url;
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Erro",
+                    description: result.error || "Não foi possível iniciar o pagamento.",
+                });
+            }
+        } catch (error) {
+            console.error('Error starting checkout:', error);
+            toast({
+                variant: "destructive",
+                title: "Erro de rede",
+                description: "Não foi possível conectar ao servidor.",
+            });
+        } finally {
+            setIsUpgrading(false);
+            setShowUpgradeDialog(false);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-background">
-            <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
+            {/* Premium Header */}
+            <header className="border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-10">
                 <div className="container mx-auto flex items-center justify-between px-4 py-4">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <Link href={`/barbeiro/${barbershop.slug}`}>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" className="rounded-full bg-white/5 hover:bg-white/10 transition-colors">
                                 <ArrowLeft className="h-5 w-5" />
                             </Button>
                         </Link>
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
-                            <Settings2 className="h-5 w-5 text-gold" />
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 ring-1 ring-amber-500/20">
+                            <Settings2 className="h-6 w-6 text-amber-400" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-bold">Definições</h1>
-                            <p className="text-sm text-muted-foreground">{barbershop.nome}</p>
+                            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">Definições</h1>
+                            <p className="text-sm text-zinc-500">{barbershop.nome}</p>
                         </div>
                     </div>
                 </div>
             </header>
 
             <main className="container mx-auto px-4 py-8">
-                <div className="mx-auto max-w-4xl space-y-6">
-                    <div className="flex gap-2 border-b border-border pb-2">
-                        <Button
-                            variant={activeTab === 'services' ? 'secondary' : 'ghost'}
-                            size="sm"
+                <div className="mx-auto max-w-4xl space-y-8">
+                    {/* Premium Tab Navigation */}
+                    <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-xl border border-white/5 backdrop-blur-sm">
+                        <button
                             onClick={() => setActiveTab('services')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'services'
+                                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 text-amber-400 shadow-lg shadow-amber-500/10 border border-amber-500/20'
+                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
-                            <Scissors className="mr-2 h-4 w-4" />
+                            <Scissors className="h-4 w-4" />
                             Serviços
-                        </Button>
-                        <Button
-                            variant={activeTab === 'schedule' ? 'secondary' : 'ghost'}
-                            size="sm"
+                        </button>
+                        <button
                             onClick={() => setActiveTab('schedule')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'schedule'
+                                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 text-amber-400 shadow-lg shadow-amber-500/10 border border-amber-500/20'
+                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
-                            <Calendar className="mr-2 h-4 w-4" />
+                            <Calendar className="h-4 w-4" />
                             Horário
-                        </Button>
-                        <Button
-                            variant={activeTab === 'barbers' ? 'secondary' : 'ghost'}
-                            size="sm"
+                        </button>
+                        <button
                             onClick={() => setActiveTab('barbers')}
+                            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${activeTab === 'barbers'
+                                ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/10 text-amber-400 shadow-lg shadow-amber-500/10 border border-amber-500/20'
+                                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                                }`}
                         >
-                            <Users className="mr-2 h-4 w-4" />
+                            <Users className="h-4 w-4" />
                             Barbeiros
-                        </Button>
+                        </button>
                     </div>
 
                     {isLoading ? (
@@ -865,27 +939,77 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                         </Button>
                                     </div>
 
-                                    {/* Search Bar */}
+                                    {/* Premium Search Bar with Autocomplete */}
                                     {barbers.length > 0 && (
                                         <div className="relative">
-                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                                <Search className="h-4 w-4 text-muted-foreground" />
-                                            </div>
-                                            <Input
-                                                type="text"
-                                                value={barberSearch}
-                                                onChange={(e) => setBarberSearch(e.target.value)}
-                                                placeholder="Pesquisar barbeiros..."
-                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
-                                            />
-                                            {barberSearch && (
-                                                <button
-                                                    onClick={() => setBarberSearch('')}
-                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </button>
-                                            )}
+                                            <Command className="rounded-xl border border-white/10 bg-gradient-to-br from-zinc-900/90 to-zinc-950/90 backdrop-blur-xl shadow-2xl shadow-black/20 overflow-visible">
+                                                <div className="flex items-center px-4 py-1">
+                                                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-600/10">
+                                                        <Search className="h-4 w-4 text-amber-400" />
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        value={barberSearch}
+                                                        onChange={(e) => setBarberSearch(e.target.value)}
+                                                        placeholder="Pesquisar na equipa..."
+                                                        className="flex h-12 w-full bg-transparent px-3 text-sm font-medium outline-none placeholder:text-zinc-500 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    />
+                                                    {barberSearch && (
+                                                        <button
+                                                            onClick={() => setBarberSearch('')}
+                                                            className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800/50 text-zinc-400 hover:bg-zinc-700/50 hover:text-white transition-all duration-200"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {barberSearch && (
+                                                    <CommandList className="border-t border-white/5 bg-black/20">
+                                                        <CommandEmpty className="py-8 text-center">
+                                                            <div className="flex flex-col items-center gap-2">
+                                                                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-800/50">
+                                                                    <Users className="h-5 w-5 text-zinc-500" />
+                                                                </div>
+                                                                <p className="text-sm text-zinc-500">Nenhum barbeiro encontrado</p>
+                                                            </div>
+                                                        </CommandEmpty>
+                                                        <CommandGroup heading="Resultados" className="[&_[cmdk-group-heading]]:text-amber-500/80 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:px-4 [&_[cmdk-group-heading]]:py-2">
+                                                            {barbers
+                                                                .filter(b =>
+                                                                    b.nome.toLowerCase().includes(barberSearch.toLowerCase())
+                                                                )
+                                                                .slice(0, 5)
+                                                                .map(barber => (
+                                                                    <CommandItem
+                                                                        key={barber.id}
+                                                                        onSelect={() => { setViewingBarber(barber); setBarberSearch(''); }}
+                                                                        className="flex items-center gap-4 px-4 py-3 mx-2 my-1 rounded-lg cursor-pointer transition-all duration-200 hover:bg-gradient-to-r hover:from-amber-500/10 hover:to-orange-500/5 data-[selected=true]:bg-gradient-to-r data-[selected=true]:from-amber-500/10 data-[selected=true]:to-orange-500/5 border border-transparent hover:border-amber-500/20"
+                                                                    >
+                                                                        <div className="relative">
+                                                                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/20 to-orange-600/10 overflow-hidden ring-2 ring-amber-500/20">
+                                                                                {barber.foto_url ? (
+                                                                                    <img src={barber.foto_url} alt={barber.nome} className="h-11 w-11 object-cover" />
+                                                                                ) : (
+                                                                                    <User className="h-5 w-5 text-amber-400" />
+                                                                                )}
+                                                                            </div>
+                                                                            {barber.activo && (
+                                                                                <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 ring-2 ring-zinc-900" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <p className="text-sm font-semibold text-white">{barber.nome}</p>
+                                                                        </div>
+                                                                        {!barber.activo && (
+                                                                            <Badge variant="outline" className="text-xs border-zinc-600 text-zinc-400">Inactivo</Badge>
+                                                                        )}
+                                                                    </CommandItem>
+                                                                ))
+                                                            }
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                )}
+                                            </Command>
                                         </div>
                                     )}
 
@@ -1077,34 +1201,40 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                     );
                                                 })
                                                 .map(barber => (
-                                                    <Card key={barber.id} className={`transition-all ${!barber.activo ? 'opacity-50' : ''} hover:border-gold/30 hover:shadow-lg hover:shadow-gold/5`}>
-                                                        <CardContent className="p-4">
+                                                    <Card key={barber.id} className={`group relative overflow-hidden transition-all duration-300 cursor-pointer ${!barber.activo ? 'opacity-60' : ''} bg-gradient-to-br from-zinc-900/90 to-zinc-950/90 border border-white/5 hover:border-amber-500/30 hover:shadow-2xl hover:shadow-amber-500/10 backdrop-blur-sm`} onClick={() => setViewingBarber(barber)}>
+                                                        <CardContent className="p-5">
                                                             {barberViewMode === 'gallery' ? (
-                                                                /* Gallery View Mode */
+                                                                /* Gallery View Mode - Premium */
                                                                 <div className="flex flex-col items-center text-center">
-                                                                    <div className="relative group mb-3">
-                                                                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10 overflow-hidden border-2 border-gold/30">
+                                                                    <div className="relative mb-4">
+                                                                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 overflow-hidden ring-2 ring-amber-500/20 transition-all duration-300 group-hover:ring-amber-500/40 group-hover:scale-105">
                                                                             {barber.foto_url ? (
-                                                                                <img src={barber.foto_url} alt={barber.nome} className="h-24 w-24 object-cover" />
+                                                                                <img src={barber.foto_url} alt={barber.nome} className="h-20 w-20 object-cover" />
                                                                             ) : (
-                                                                                <User className="h-10 w-10 text-gold" />
+                                                                                <User className="h-8 w-8 text-amber-400" />
                                                                             )}
                                                                         </div>
+                                                                        {barber.activo && (
+                                                                            <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 ring-3 ring-zinc-900 flex items-center justify-center">
+                                                                                <Check className="h-3 w-3 text-white" />
+                                                                            </div>
+                                                                        )}
                                                                         {!barber.activo && (
-                                                                            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-                                                                                <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                            <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center backdrop-blur-[1px]">
+                                                                                <Badge className="text-[10px] bg-zinc-800 border-zinc-600 text-zinc-400">Inactivo</Badge>
                                                                             </div>
                                                                         )}
                                                                     </div>
-                                                                    <h3 className="font-semibold text-sm">{barber.nome}</h3>
+                                                                    <h3 className="font-semibold text-white text-sm">{barber.nome}</h3>
                                                                     {barber.bio && (
-                                                                        <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{barber.bio}</p>
+                                                                        <p className="text-xs text-zinc-500 line-clamp-2 mt-1 leading-relaxed">{barber.bio}</p>
                                                                     )}
-                                                                    <div className="flex gap-1 mt-3">
-                                                                        <Button size="sm" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
-                                                                            <PenLine className="h-3 w-3" />
+                                                                    <div className="flex gap-1 mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" onClick={(e) => e.stopPropagation()}>
+                                                                        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingBarber(barber.id); }} className="h-8 px-3 bg-white/5 hover:bg-amber-500/20 hover:text-amber-400 transition-colors">
+                                                                            <PenLine className="h-3 w-3 mr-1" />
+                                                                            Editar
                                                                         </Button>
-                                                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setBarberToDelete(barber)}>
+                                                                        <Button size="sm" variant="ghost" className="h-8 px-2 bg-white/5 hover:bg-red-500/20 text-zinc-400 hover:text-red-400 transition-colors" onClick={(e) => { e.stopPropagation(); setBarberToDelete(barber); }}>
                                                                             <Trash2 className="h-3 w-3" />
                                                                         </Button>
                                                                     </div>
@@ -1311,24 +1441,47 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                         <div className="relative">
                                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                             <Input
+                                                type="tel"
                                                 value={barber.telefone || ''}
-                                                onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, telefone: e.target.value } : b))}
+                                                onChange={(e) => {
+                                                    // Only allow digits and limit to 9 characters for Portuguese numbers
+                                                    const value = e.target.value.replace(/\D/g, '').slice(0, 9);
+                                                    setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, telefone: value } : b));
+                                                }}
                                                 className="pl-10 bg-zinc-800/50 border-zinc-700/50"
-                                                placeholder="912 345 678"
+                                                placeholder="912345678"
+                                                maxLength={9}
+                                                pattern="[0-9]{9}"
                                             />
                                         </div>
+                                        <p className="text-xs text-muted-foreground mt-1">9 dígitos (ex: 912345678)</p>
                                     </div>
                                 </div>
 
                                 {/* Bio */}
                                 <div>
-                                    <Label className="mb-2 block text-sm text-muted-foreground">Bio / Especialidades</Label>
+                                    <Label className="mb-2 block text-sm text-muted-foreground">Bio</Label>
                                     <textarea
                                         value={barber.bio || ''}
                                         onChange={(e) => setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, bio: e.target.value } : b))}
-                                        className="w-full h-24 rounded-md border border-zinc-700/50 bg-zinc-800/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/50 resize-none"
-                                        placeholder="Ex: Especialista em fade e barba, 5 anos de experiência..."
+                                        className="w-full h-20 rounded-md border border-zinc-700/50 bg-zinc-800/50 px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/50 resize-none"
+                                        placeholder="Breve descrição sobre o barbeiro..."
                                     />
+                                </div>
+
+                                {/* Especialidades */}
+                                <div>
+                                    <Label className="mb-2 block text-sm text-muted-foreground">Especialidades</Label>
+                                    <Input
+                                        value={barber.especialidades?.join(', ') || ''}
+                                        onChange={(e) => {
+                                            const especialidades = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                                            setBarbers(prev => prev.map(b => b.id === editingBarber ? { ...b, especialidades } : b));
+                                        }}
+                                        className="bg-zinc-800/50 border-zinc-700/50"
+                                        placeholder="Fade, Barba, Degradê, Coloração..."
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">Separa cada especialidade por vírgula</p>
                                 </div>
                             </div>
                         );
@@ -1352,6 +1505,179 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* View Barber Details Modal */}
+            <Dialog open={!!viewingBarber} onOpenChange={() => setViewingBarber(null)}>
+                <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-white/10 max-w-lg">
+                    <DialogHeader className="pb-4">
+                        <DialogTitle className="flex items-center gap-3">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 ring-2 ring-amber-500/20 overflow-hidden">
+                                {viewingBarber?.foto_url ? (
+                                    <img src={viewingBarber.foto_url} alt={viewingBarber.nome} className="h-12 w-12 object-cover" />
+                                ) : (
+                                    <User className="h-6 w-6 text-amber-400" />
+                                )}
+                            </div>
+                            <div>
+                                <span className="text-xl font-bold text-white">{viewingBarber?.nome}</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                    {viewingBarber?.activo ? (
+                                        <Badge className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                                            <Check className="h-3 w-3 mr-1" />
+                                            Activo
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-zinc-400 border-zinc-600 text-xs">Inactivo</Badge>
+                                    )}
+                                </div>
+                            </div>
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {viewingBarber && (
+                        <div className="space-y-4 py-2">
+                            {/* Bio */}
+                            {viewingBarber.bio && (
+                                <div className="rounded-xl bg-white/5 p-4 border border-white/5">
+                                    <p className="text-sm text-zinc-300 leading-relaxed">{viewingBarber.bio}</p>
+                                </div>
+                            )}
+
+                            {/* Contact Info */}
+                            <div className="grid gap-3">
+                                {viewingBarber.email && (
+                                    <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
+                                            <Mail className="h-4 w-4 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-zinc-500">Email</p>
+                                            <p className="text-sm text-white">{viewingBarber.email}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {viewingBarber.telefone && (
+                                    <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
+                                            <Phone className="h-4 w-4 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-zinc-500">Telefone</p>
+                                            <p className="text-sm text-white">{viewingBarber.telefone}</p>
+                                        </div>
+                                    </div>
+                                )}
+                                {viewingBarber.data_nascimento && (
+                                    <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10">
+                                            <Calendar className="h-4 w-4 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-zinc-500">Data de Nascimento</p>
+                                            <p className="text-sm text-white">{new Date(viewingBarber.data_nascimento).toLocaleDateString('pt-PT')}</p>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="flex gap-2 pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setViewingBarber(null)}
+                            className="flex-1 border-zinc-700 hover:bg-zinc-800"
+                        >
+                            Fechar
+                        </Button>
+                        <Button
+                            onClick={() => { if (viewingBarber) { setEditingBarber(viewingBarber.id); setViewingBarber(null); } }}
+                            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400"
+                        >
+                            <PenLine className="h-4 w-4 mr-2" />
+                            Editar
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Pro Upgrade Dialog */}
+            <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+                <DialogContent className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-amber-500/20 max-w-md">
+                    <DialogHeader className="text-center pb-4">
+                        <div className="flex justify-center mb-4">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/20 ring-2 ring-amber-500/30">
+                                <Crown className="h-8 w-8 text-amber-400" />
+                            </div>
+                        </div>
+                        <DialogTitle className="text-2xl font-bold text-center">
+                            Upgrade para <span className="text-amber-400">Pro</span>
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-zinc-400">
+                            Desbloqueia todas as funcionalidades premium
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-3 py-4">
+                        <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                                <MessageSquare className="h-5 w-5 text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-white">Notificações SMS</p>
+                                <p className="text-xs text-zinc-500">Alertas automáticos para clientes</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                                <CreditCard className="h-5 w-5 text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-white">Pagamentos Online</p>
+                                <p className="text-xs text-zinc-500">Depósitos e pagamentos via Stripe</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                                <Users className="h-5 w-5 text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-white">Barbeiros Ilimitados</p>
+                                <p className="text-xs text-zinc-500">Adiciona toda a tua equipa</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="text-center py-2">
+                        <div className="flex items-baseline justify-center gap-1">
+                            <span className="text-4xl font-bold text-amber-400">19€</span>
+                            <span className="text-zinc-500">/mês</span>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex gap-2 pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowUpgradeDialog(false)}
+                            className="flex-1 border-zinc-700 hover:bg-zinc-800"
+                        >
+                            Agora não
+                        </Button>
+                        <Button
+                            onClick={handleUpgrade}
+                            disabled={isUpgrading}
+                            className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400"
+                        >
+                            {isUpgrading ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Crown className="h-4 w-4 mr-2" />
+                            )}
+                            Fazer Upgrade
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -1370,7 +1696,7 @@ function SettingsPage() {
             try {
                 const { data: shop, error: shopError } = await supabase
                     .from('barbearias')
-                    .select('id, nome, slug')
+                    .select('id, nome, slug, is_pro')
                     .eq('slug', slug)
                     .single();
 

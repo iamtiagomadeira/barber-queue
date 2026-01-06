@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
         if (error) {
             console.error('Error creating service:', error);
             return NextResponse.json(
-                { success: false, error: 'Erro ao criar serviço' },
+                { success: false, error: error.message || 'Erro ao criar serviço', details: error.code },
                 { status: 500 }
             );
         }
