@@ -77,14 +77,16 @@ function BarberDashboardContent({ barbershop }: { barbershop: Barbershop }) {
     const handleClearQueue = async () => {
         setIsClearing(true);
         try {
-            // Clear all pending queue entries for this barbershop
-            const { error } = await supabase
-                .from('fila')
-                .delete()
-                .eq('barbearia_id', barbershop.id)
-                .in('status', ['waiting', 'in_service']);
+            // Use API route to clear queue (server-side has full access)
+            const response = await fetch('/api/queue/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barbearia_id: barbershop.id }),
+            });
 
-            if (error) throw error;
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Erro ao limpar fila');
+
             handleQueueRefresh();
         } catch (error) {
             console.error('Error clearing queue:', error);
