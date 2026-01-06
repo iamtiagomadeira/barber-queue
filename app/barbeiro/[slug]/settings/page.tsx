@@ -508,8 +508,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                             {/* SMS Notifications Toggle */}
                             <div
                                 className={`flex items-center justify-between p-4 rounded-lg border transition-all ${barbershop.is_pro
-                                        ? 'border-zinc-700/50 bg-zinc-800/30'
-                                        : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
+                                    ? 'border-zinc-700/50 bg-zinc-800/30'
+                                    : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
                                     }`}
                                 onClick={!barbershop.is_pro ? () => setShowUpgradeDialog(true) : undefined}
                             >
@@ -552,8 +552,8 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                             {/* Online Payments Toggle */}
                             <div
                                 className={`flex items-center justify-between p-4 rounded-lg border transition-all ${barbershop.is_pro
-                                        ? 'border-zinc-700/50 bg-zinc-800/30'
-                                        : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
+                                    ? 'border-zinc-700/50 bg-zinc-800/30'
+                                    : 'border-zinc-700/30 bg-zinc-800/20 cursor-pointer hover:border-amber-500/30'
                                     }`}
                                 onClick={!barbershop.is_pro ? () => setShowUpgradeDialog(true) : undefined}
                             >
@@ -599,7 +599,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                     className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black font-semibold hover:from-amber-400 hover:to-orange-400"
                                 >
                                     <Crown className="h-4 w-4 mr-2" />
-                                    Fazer Upgrade para Pro - 19€/mês
+                                    Fazer Upgrade para Pro - 29€/mês
                                 </Button>
                             )}
                         </CardContent>
@@ -1749,7 +1749,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-white">Notificações SMS</p>
-                                <p className="text-xs text-zinc-500">Alertas automáticos para clientes</p>
+                                <p className="text-xs text-zinc-500">Reduz no-shows em até 70%</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
@@ -1758,7 +1758,16 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-white">Pagamentos Online</p>
-                                <p className="text-xs text-zinc-500">Depósitos e pagamentos via Stripe</p>
+                                <p className="text-xs text-zinc-500">Depósitos antecipados via Stripe</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+                                <Calendar className="h-5 w-5 text-amber-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-white">Agenda de Marcações</p>
+                                <p className="text-xs text-zinc-500">Clientes marcam online 24/7</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 rounded-lg bg-white/5 p-3 border border-white/5">
@@ -1774,7 +1783,7 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
 
                     <div className="text-center py-2">
                         <div className="flex items-baseline justify-center gap-1">
-                            <span className="text-4xl font-bold text-amber-400">19€</span>
+                            <span className="text-4xl font-bold text-amber-400">29€</span>
                             <span className="text-zinc-500">/mês</span>
                         </div>
                     </div>

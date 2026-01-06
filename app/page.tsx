@@ -133,7 +133,7 @@ export default function Home() {
             price: "0",
             yearlyPrice: "0",
             period: "mês",
-            description: "Tudo o que precisas para começar",
+            description: "Para testar a plataforma",
             buttonText: "Começar Grátis",
             href: "/barbeiro/register",
             isPopular: false,
@@ -141,7 +141,10 @@ export default function Home() {
               "Fila Virtual Ilimitada",
               "Link da Loja Personalizado",
               "QR Code para Impressão",
-              "Dashboard Básico",
+              "Máximo 3 Barbeiros",
+              "❌ Sem SMS",
+              "❌ Sem Pagamentos Online",
+              "❌ Sem Agenda de Marcações",
             ]
           },
           {
@@ -154,12 +157,13 @@ export default function Home() {
             href: "/barbeiro/login?plan=pro",
             isPopular: true,
             features: [
-              "Tudo do Starter",
-              "Pagamentos Online (Stripe)",
-              "Lembretes SMS (Anti-No-Show)",
-              "Agenda de Marcações",
-              "Relatórios Avançados",
-              "Suporte Prioritário",
+              "✅ Tudo do Starter",
+              "✅ Barbeiros Ilimitados",
+              "✅ Lembretes SMS (-70% no-shows)",
+              "✅ Pagamentos Online (Stripe)",
+              "✅ Agenda de Marcações 24/7",
+              "✅ Relatórios Avançados",
+              "✅ Suporte Prioritário",
             ]
           },
           {
@@ -173,12 +177,13 @@ export default function Home() {
             isPopular: false,
             isContactSales: true,
             features: [
-              "Tudo do Pro",
-              "Múltiplos Barbeiros",
+              "Tudo do Pro +",
+              "Múltiplas Localizações",
               "Comissões Automáticas",
               "Faturação Vendus",
+              "API Personalizada",
               "Gestor de Conta Dedicado",
-              "SLA Garantido",
+              "SLA 99.9% Garantido",
             ]
           }
         ]}
