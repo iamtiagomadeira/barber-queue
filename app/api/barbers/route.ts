@@ -1,86 +1,86 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 
-function getSupabase() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) return null;
-    return createClient(url, key);
+interface BarberData {
+    id?: string;
+    barbearia_id?: string;
+    nome: string;
+    email?: string;
+    telefone?: string;
+    foto_url?: string;
+    data_nascimento?: string;
+    especialidades?: string[];
+    bio?: string;
+    activo?: boolean;
 }
 
-const DEFAULT_BARBEARIA_ID = '00000000-0000-0000-0000-000000000001';
-
-// Mock barbers for demo
-const MOCK_BARBERS = [
-    {
-        id: '1',
-        nome: 'Carlos Silva',
-        foto_url: null,
-        bio: 'Barbeiro profissional com 10 anos de experiência',
-        especialidades: ['fade', 'corte clássico', 'barba'],
-        activo: true,
-    },
-    {
-        id: '2',
-        nome: 'Miguel Santos',
-        foto_url: null,
-        bio: 'Especialista em cortes modernos e designs',
-        especialidades: ['fade', 'designs', 'coloração'],
-        activo: true,
-    },
-];
-
-// GET: List barbers for a barbershop
+// GET - List barbers for a barbershop
 export async function GET(request: NextRequest) {
     try {
         const { searchParams } = new URL(request.url);
-        const barbearia_id = searchParams.get('barbearia_id') || DEFAULT_BARBEARIA_ID;
+        const barbearia_id = searchParams.get('barbearia_id');
+        const activeOnly = searchParams.get('active_only') !== 'false';
 
-        const supabase = getSupabase();
-
-        if (supabase) {
-            const { data, error } = await supabase
-                .from('barbeiros')
-                .select('*')
-                .eq('barbearia_id', barbearia_id)
-                .eq('activo', true)
-                .order('ordem', { ascending: true });
-
-            if (!error && data && data.length > 0) {
-                return NextResponse.json({ success: true, data });
-            }
+        if (!barbearia_id) {
+            return NextResponse.json(
+                { error: 'barbearia_id é obrigatório' },
+                { status: 400 }
+            );
         }
 
-        // Fallback to mock data
-        return NextResponse.json({ success: true, data: MOCK_BARBERS });
+        const supabase = await createClient();
+
+        let query = supabase
+            .from('barbeiros')
+            .select('*')
+            .eq('barbearia_id', barbearia_id)
+            .order('nome');
+
+        if (activeOnly) {
+            query = query.eq('activo', true);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error('Error fetching barbers:', error);
+            return NextResponse.json(
+                { error: 'Erro ao buscar barbeiros' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({ success: true, data: data || [] });
     } catch (error) {
-        console.error('Error fetching barbers:', error);
+        console.error('Error in GET /api/barbers:', error);
         return NextResponse.json(
-            { success: false, error: 'Erro ao obter barbeiros' },
+            { error: 'Erro interno do servidor' },
             { status: 500 }
         );
     }
 }
 
-// POST: Create a new barber
+// POST - Create a new barber
 export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
-        const { barbearia_id = DEFAULT_BARBEARIA_ID, nome, foto_url, bio, especialidades } = body;
+        const body: BarberData = await request.json();
+        const { barbearia_id, nome, email, telefone, foto_url, data_nascimento, especialidades, bio } = body;
 
-        if (!nome) {
+        if (!barbearia_id || !nome) {
             return NextResponse.json(
-                { success: false, error: 'Nome é obrigatório' },
+                { error: 'barbearia_id e nome são obrigatórios' },
                 { status: 400 }
             );
         }
 
-        const supabase = getSupabase();
+        const supabase = await createClient();
 
-        if (!supabase) {
+        // Check authentication
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
             return NextResponse.json(
-                { success: false, error: 'Base de dados não configurada' },
-                { status: 500 }
+                { error: 'Não autenticado' },
+                { status: 401 }
             );
         }
 
@@ -89,9 +89,13 @@ export async function POST(request: NextRequest) {
             .insert({
                 barbearia_id,
                 nome,
+                email,
+                telefone,
                 foto_url,
-                bio,
+                data_nascimento,
                 especialidades: especialidades || [],
+                bio,
+                activo: true,
             })
             .select()
             .single();
@@ -99,16 +103,117 @@ export async function POST(request: NextRequest) {
         if (error) {
             console.error('Error creating barber:', error);
             return NextResponse.json(
-                { success: false, error: 'Erro ao criar barbeiro' },
+                { error: 'Erro ao criar barbeiro' },
                 { status: 500 }
             );
         }
 
         return NextResponse.json({ success: true, data });
     } catch (error) {
-        console.error('Error creating barber:', error);
+        console.error('Error in POST /api/barbers:', error);
         return NextResponse.json(
-            { success: false, error: 'Erro interno do servidor' },
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
+    }
+}
+
+// PATCH - Update a barber
+export async function PATCH(request: NextRequest) {
+    try {
+        const body: BarberData = await request.json();
+        const { id, barbearia_id, ...updateData } = body;
+
+        if (!id) {
+            return NextResponse.json(
+                { error: 'id é obrigatório' },
+                { status: 400 }
+            );
+        }
+
+        const supabase = await createClient();
+
+        // Check authentication
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Não autenticado' },
+                { status: 401 }
+            );
+        }
+
+        // Remove undefined values
+        const cleanData = Object.fromEntries(
+            Object.entries(updateData).filter(([, v]) => v !== undefined)
+        );
+
+        const { data, error } = await supabase
+            .from('barbeiros')
+            .update(cleanData)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error updating barber:', error);
+            return NextResponse.json(
+                { error: 'Erro ao atualizar barbeiro' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({ success: true, data });
+    } catch (error) {
+        console.error('Error in PATCH /api/barbers:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
+            { status: 500 }
+        );
+    }
+}
+
+// DELETE - Remove a barber
+export async function DELETE(request: NextRequest) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json(
+                { error: 'id é obrigatório' },
+                { status: 400 }
+            );
+        }
+
+        const supabase = await createClient();
+
+        // Check authentication
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            return NextResponse.json(
+                { error: 'Não autenticado' },
+                { status: 401 }
+            );
+        }
+
+        const { error } = await supabase
+            .from('barbeiros')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error('Error deleting barber:', error);
+            return NextResponse.json(
+                { error: 'Erro ao eliminar barbeiro' },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('Error in DELETE /api/barbers:', error);
+        return NextResponse.json(
+            { error: 'Erro interno do servidor' },
             { status: 500 }
         );
     }

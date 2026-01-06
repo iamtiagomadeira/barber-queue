@@ -25,6 +25,11 @@ import {
     X,
     Sparkles,
     PenLine,
+    Users,
+    User,
+    Mail,
+    Phone,
+    Camera,
 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -52,6 +57,18 @@ interface ScheduleEntry {
     hora_abertura: string;
     hora_fecho: string;
     fechado: boolean;
+}
+
+interface Barber {
+    id: string;
+    nome: string;
+    email?: string;
+    telefone?: string;
+    foto_url?: string;
+    data_nascimento?: string;
+    especialidades?: string[];
+    bio?: string;
+    activo: boolean;
 }
 
 interface Barbershop {
@@ -87,18 +104,21 @@ const SERVICE_TEMPLATES = [
     { nome: 'Kids (Criança)', duracao_media: 25, precoSugerido: 10 },
 ];
 
-type TabType = 'services' | 'schedule' | 'profile';
+type TabType = 'services' | 'schedule' | 'barbers';
 
 function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
     const [activeTab, setActiveTab] = useState<TabType>('services');
     const [services, setServices] = useState<Service[]>([]);
     const [schedule, setSchedule] = useState<ScheduleEntry[]>(DEFAULT_SCHEDULE);
+    const [barbers, setBarbers] = useState<Barber[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [editingService, setEditingService] = useState<string | null>(null);
     const [newService, setNewService] = useState<Partial<Service> | null>(null);
     const [creationMode, setCreationMode] = useState<'template' | 'custom'>('template');
     const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [newBarber, setNewBarber] = useState<Partial<Barber> | null>(null);
+    const [editingBarber, setEditingBarber] = useState<string | null>(null);
 
     const fetchServices = useCallback(async () => {
         try {
@@ -128,14 +148,26 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
         }
     }, [barbershop.id]);
 
+    const fetchBarbers = useCallback(async () => {
+        try {
+            const response = await fetch(`/api/barbers?barbearia_id=${barbershop.id}&active_only=false`);
+            const result = await response.json();
+            if (result.success) {
+                setBarbers(result.data || []);
+            }
+        } catch (error) {
+            console.error('Error fetching barbers:', error);
+        }
+    }, [barbershop.id]);
+
     useEffect(() => {
         const loadData = async () => {
             setIsLoading(true);
-            await Promise.all([fetchServices(), fetchSchedule()]);
+            await Promise.all([fetchServices(), fetchSchedule(), fetchBarbers()]);
             setIsLoading(false);
         };
         loadData();
-    }, [fetchServices, fetchSchedule]);
+    }, [fetchServices, fetchSchedule, fetchBarbers]);
 
     const handleCreateService = async () => {
         if (!newService?.nome || !newService?.duracao_media || newService?.preco === undefined) return;
@@ -230,6 +262,66 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
         }
     };
 
+    // Barber handlers
+    const handleCreateBarber = async () => {
+        if (!newBarber?.nome) return;
+
+        setIsSaving(true);
+        try {
+            const response = await fetch('/api/barbers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    barbearia_id: barbershop.id,
+                    ...newBarber,
+                    activo: true,
+                }),
+            });
+            const result = await response.json();
+            if (result.success) {
+                setBarbers(prev => [...prev, result.data]);
+                setNewBarber(null);
+            }
+        } catch (error) {
+            console.error('Error creating barber:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleUpdateBarber = async (barber: Barber) => {
+        setIsSaving(true);
+        try {
+            const response = await fetch('/api/barbers', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(barber),
+            });
+            const result = await response.json();
+            if (result.success) {
+                setBarbers(prev => prev.map(b => b.id === barber.id ? result.data : b));
+                setEditingBarber(null);
+            }
+        } catch (error) {
+            console.error('Error updating barber:', error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteBarber = async (id: string) => {
+        if (!confirm('Tens a certeza que queres eliminar este barbeiro?')) return;
+        try {
+            const response = await fetch(`/api/barbers?id=${id}`, { method: 'DELETE' });
+            const result = await response.json();
+            if (result.success) {
+                setBarbers(prev => prev.filter(b => b.id !== id));
+            }
+        } catch (error) {
+            console.error('Error deleting barber:', error);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background">
             <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -269,6 +361,14 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                         >
                             <Calendar className="mr-2 h-4 w-4" />
                             Horário
+                        </Button>
+                        <Button
+                            variant={activeTab === 'barbers' ? 'secondary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setActiveTab('barbers')}
+                        >
+                            <Users className="mr-2 h-4 w-4" />
+                            Barbeiros
                         </Button>
                     </div>
 
@@ -650,9 +750,245 @@ function SettingsContent({ barbershop }: { barbershop: Barbershop }) {
                                                         </div>
                                                     )}
                                                 </div>
-                                            ))}
-                                        </CardContent>
+                                            ))}\n                                        </CardContent>
                                     </Card>
+                                </div>
+                            )}
+
+                            {activeTab === 'barbers' && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h2 className="text-lg font-semibold">Equipa</h2>
+                                        <Button
+                                            onClick={() => setNewBarber({ nome: '', email: '', telefone: '', bio: '', especialidades: [], activo: true })}
+                                            disabled={!!newBarber}
+                                            className="bg-gold text-black hover:bg-gold/90"
+                                        >
+                                            <Plus className="mr-2 h-4 w-4" />
+                                            Adicionar Barbeiro
+                                        </Button>
+                                    </div>
+
+                                    {/* New Barber Form */}
+                                    {newBarber && (
+                                        <Card className="border-gold/30 bg-zinc-900/50">
+                                            <CardHeader className="pb-4">
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <User className="h-4 w-4 text-gold" />
+                                                    Novo Barbeiro
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Nome *</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                                <User className="h-4 w-4 text-muted-foreground" />
+                                                            </div>
+                                                            <Input
+                                                                value={newBarber.nome || ''}
+                                                                onChange={(e) => setNewBarber(prev => ({ ...prev!, nome: e.target.value }))}
+                                                                placeholder="Nome completo"
+                                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Email</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                                            </div>
+                                                            <Input
+                                                                type="email"
+                                                                value={newBarber.email || ''}
+                                                                onChange={(e) => setNewBarber(prev => ({ ...prev!, email: e.target.value }))}
+                                                                placeholder="email@exemplo.com"
+                                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Telefone</Label>
+                                                        <div className="relative">
+                                                            <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                                                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                                            </div>
+                                                            <Input
+                                                                type="tel"
+                                                                value={newBarber.telefone || ''}
+                                                                onChange={(e) => setNewBarber(prev => ({ ...prev!, telefone: e.target.value }))}
+                                                                placeholder="+351 912 345 678"
+                                                                className="pl-10 bg-zinc-900/50 border-zinc-700/50"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="mb-2 block text-sm text-muted-foreground">Data de Nascimento</Label>
+                                                        <Input
+                                                            type="date"
+                                                            value={newBarber.data_nascimento || ''}
+                                                            onChange={(e) => setNewBarber(prev => ({ ...prev!, data_nascimento: e.target.value }))}
+                                                            className="bg-zinc-900/50 border-zinc-700/50"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <Label className="mb-2 block text-sm text-muted-foreground">Bio / Especialidades</Label>
+                                                    <Input
+                                                        value={newBarber.bio || ''}
+                                                        onChange={(e) => setNewBarber(prev => ({ ...prev!, bio: e.target.value }))}
+                                                        placeholder="Ex: Especialista em fade e barba..."
+                                                        className="bg-zinc-900/50 border-zinc-700/50"
+                                                    />
+                                                </div>
+                                                <div className="flex gap-3 pt-2">
+                                                    <Button
+                                                        onClick={handleCreateBarber}
+                                                        disabled={isSaving || !newBarber.nome}
+                                                        className="flex-1 h-11 bg-gold text-black hover:bg-gold/90"
+                                                    >
+                                                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                                                        Adicionar
+                                                    </Button>
+                                                    <Button variant="ghost" onClick={() => setNewBarber(null)} className="h-11">
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+
+                                    {/* Barbers List */}
+                                    <div className="space-y-3">
+                                        {barbers.length === 0 && !newBarber ? (
+                                            <Card className="border-dashed border-2 border-zinc-700">
+                                                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                                                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/10 mb-4">
+                                                        <Users className="h-8 w-8 text-gold" />
+                                                    </div>
+                                                    <h3 className="font-semibold mb-1">Ainda não tens barbeiros</h3>
+                                                    <p className="text-sm text-muted-foreground mb-4">Adiciona membros da tua equipa para os clientes poderem escolher.</p>
+                                                    <Button
+                                                        onClick={() => setNewBarber({ nome: '', activo: true })}
+                                                        className="bg-gold text-black hover:bg-gold/90"
+                                                    >
+                                                        <Plus className="mr-2 h-4 w-4" />
+                                                        Adicionar Primeiro Barbeiro
+                                                    </Button>
+                                                </CardContent>
+                                            </Card>
+                                        ) : (
+                                            barbers.map(barber => (
+                                                <Card key={barber.id} className={`transition-colors ${!barber.activo ? 'opacity-50' : ''} hover:border-gold/30`}>
+                                                    <CardContent className="p-4">
+                                                        {editingBarber === barber.id ? (
+                                                            /* Edit Mode */
+                                                            <div className="space-y-4">
+                                                                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+                                                                    <div>
+                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Nome</Label>
+                                                                        <Input
+                                                                            value={barber.nome}
+                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, nome: e.target.value } : b))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Email</Label>
+                                                                        <Input
+                                                                            value={barber.email || ''}
+                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, email: e.target.value } : b))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Telefone</Label>
+                                                                        <Input
+                                                                            value={barber.telefone || ''}
+                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, telefone: e.target.value } : b))}
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <Label className="mb-1 block text-xs text-muted-foreground">Bio</Label>
+                                                                        <Input
+                                                                            value={barber.bio || ''}
+                                                                            onChange={(e) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, bio: e.target.value } : b))}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex items-center justify-between pt-2">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Switch
+                                                                            checked={barber.activo}
+                                                                            onCheckedChange={(checked) => setBarbers(prev => prev.map(b => b.id === barber.id ? { ...b, activo: checked } : b))}
+                                                                        />
+                                                                        <span className="text-sm text-muted-foreground">Activo</span>
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <Button
+                                                                            size="sm"
+                                                                            onClick={() => handleUpdateBarber(barber)}
+                                                                            disabled={isSaving}
+                                                                            className="bg-gold text-black hover:bg-gold/90"
+                                                                        >
+                                                                            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                                                                        </Button>
+                                                                        <Button size="sm" variant="ghost" onClick={() => setEditingBarber(null)}>
+                                                                            <X className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            /* View Mode */
+                                                            <div className="flex items-center gap-4">
+                                                                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gold/10">
+                                                                    {barber.foto_url ? (
+                                                                        <img src={barber.foto_url} alt={barber.nome} className="h-14 w-14 rounded-full object-cover" />
+                                                                    ) : (
+                                                                        <User className="h-6 w-6 text-gold" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <h3 className="font-semibold">{barber.nome}</h3>
+                                                                        {!barber.activo && (
+                                                                            <Badge variant="outline" className="text-xs">Inactivo</Badge>
+                                                                        )}
+                                                                    </div>
+                                                                    {barber.bio && (
+                                                                        <p className="text-sm text-muted-foreground truncate">{barber.bio}</p>
+                                                                    )}
+                                                                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                                                        {barber.email && (
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Mail className="h-3 w-3" />
+                                                                                {barber.email}
+                                                                            </span>
+                                                                        )}
+                                                                        {barber.telefone && (
+                                                                            <span className="flex items-center gap-1">
+                                                                                <Phone className="h-3 w-3" />
+                                                                                {barber.telefone}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                <div className="flex gap-1">
+                                                                    <Button size="icon" variant="ghost" onClick={() => setEditingBarber(barber.id)}>
+                                                                        <PenLine className="h-4 w-4" />
+                                                                    </Button>
+                                                                    <Button size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteBarber(barber.id)}>
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </CardContent>
+                                                </Card>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </>
